@@ -101,18 +101,18 @@ class Application(tk.Frame):
         notebook.pack(fill=tk.BOTH)
 
         # -----------------------------------------------tobii_tab--------------------------------------------
-        t_main = tk.Frame(tobii_tab, bg="red")
+        t_main = tk.Frame(tobii_tab)
         t_main.pack(fill=tk.BOTH, expand=True)
-        t_l_sub = tk.Frame(t_main, bg="#f9931e")
-        t_l_sub.pack(side=tk.LEFT, fill=tk.BOTH, anchor=tk.W, expand=True)
-        t_r_sub = tk.Frame(t_main, bg="#f9931e")
-        t_r_sub.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        t_l_sub = tk.Frame(t_main)
+        t_l_sub.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        t_r_sub = tk.Frame(t_main)
+        t_r_sub.pack(side=tk.LEFT, fill=tk.BOTH, pady=(275, 0))
 
-        t_movie = tk.Frame(t_l_sub, bg='black')
-        t_movie.pack(side=tk.TOP, fill=tk.BOTH)
-        self.t_canvas = tk.Canvas(t_movie, background="#000")
-        self.t_canvas.pack(side=tk.TOP, fill=tk.BOTH)
-        t_status = tk.Label(t_l_sub, text="t_status:None", bg="blue")
+        #t_movie = tk.Frame(t_l_sub, bg='black')
+        #t_movie.pack(side=tk.TOP, fill=tk.BOTH, expand=True) #白い境界線ができてる...
+        self.t_canvas = tk.Canvas(t_l_sub, background="#000")
+        self.t_canvas.pack(side=tk.TOP, fill=tk.BOTH, expand=True)
+        t_status = tk.Label(t_l_sub, text="                     t_status:")
         t_status.pack(side=tk.TOP, anchor=tk.W)
         self.uuid_box = tk.Label(t_l_sub, text="                           uuid:")
         self.uuid_box.pack(side=tk.TOP, anchor=tk.W)
@@ -133,23 +133,23 @@ class Application(tk.Frame):
         self.rest_battery_box = tk.Label(t_l_sub, text="                rest battery:")
         self.rest_battery_box.pack(side=tk.TOP, anchor=tk.W)
 
-        calibration = tk.Button(t_r_sub, text="calibration", relief=tk.RAISED, bd=2, command=self.calib_record)
+        video_start = tk.Button(t_r_sub, text="camera on", command=self.play_tobii, relief=tk.RAISED, bd=2, width=20, pady=10)
+        video_start.pack(side=tk.TOP, fill=tk.BOTH)
+        calibration = tk.Button(t_r_sub, text="calibration", relief=tk.RAISED, bd=2, command=self.calibrate_f, pady=10)
         calibration.pack(side=tk.TOP, fill=tk.BOTH)
         self.calib_status = tk.Label(t_r_sub, text="x:None,    y:None")
         self.calib_status.pack(side=tk.TOP, anchor=tk.W)
-        self.calib_judge = tk.Label(t_r_sub, text="FAILED", bg=self.load_bt_color)
-        self.calib_judge.pack(side=tk.TOP, anchor=tk.W)
-        video_start = tk.Button(t_r_sub, text="start", command=self.play_tobii, relief=tk.RAISED, bd=2)
-        video_start.pack(side=tk.TOP, fill=tk.BOTH)
-        recording_start = tk.Button(t_r_sub, text="recording", command=self.start_record, relief=tk.RAISED, bd=2)
+        self.calib_judge = tk.Label(t_r_sub, text="please calibration", bg=self.load_bt_color, pady=10)
+        self.calib_judge.pack(side=tk.TOP, fill=tk.BOTH)
+        recording_start = tk.Button(t_r_sub, text="start recording", command=self.start_record, relief=tk.RAISED, bd=2, pady=10)
         recording_start.pack(side=tk.TOP, fill=tk.BOTH)
-        recording_time = tk.Label(t_r_sub, text="time:None")
+        recording_time = tk.Label(t_r_sub, text="time:None", pady=10)
         recording_time.pack(side=tk.TOP, anchor=tk.W)
-        snapshot = tk.Button(t_r_sub, text="snapshot", relief=tk.RAISED, bd=2, command=self.snapshot_record)
-        snapshot.pack(side=tk.TOP, fill=tk.BOTH)
-        recording_stop = tk.Button(t_r_sub, text="stop", command=self.stop_record(), relief=tk.RAISED, bd=2)
+        recording_stop = tk.Button(t_r_sub, text="stop recording", command=self.stop_record(), relief=tk.RAISED, bd=2, pady=10)
         recording_stop.pack(side=tk.TOP, fill=tk.BOTH)
-        update = tk.Button(t_r_sub, text="update", relief=tk.RAISED, bd=2, command=self.fecth_tobii_info)
+        snapshot = tk.Button(t_r_sub, text="snapshot", relief=tk.RAISED, bd=2, command=self.snapshot_record, pady=10)
+        snapshot.pack(side=tk.TOP, fill=tk.BOTH)
+        update = tk.Button(t_r_sub, text="update", relief=tk.RAISED, bd=2, command=self.fecth_tobii_info, pady=10)
         update.pack(side=tk.TOP, fill=tk.BOTH)
 
         # -----------------------------------------------convert_tab--------------------------------------------
@@ -544,6 +544,8 @@ class Application(tk.Frame):
             image=self.photo_image  # 表示画像データ
         )
 
+        self.fecth_tobii_info()
+
         self.master.after(2, self.disp_t_movie)
 
     def fetch_gaze(self):
@@ -598,10 +600,19 @@ class Application(tk.Frame):
 
         return info_dic
 
+    def calibrate_f(self):
+        thread5 = threading.Thread(target=self.calib_record)
+        thread6 = threading.Thread(target=self.check_calib)
+        thread5.start()
+        thread6.start()
+
     def calib_record(self):
         calib = Calibrate(self.ipv4_address)
         self.is_calib = calib.calibrate()
         self.calib_judge['text'] = "calibration_status:" + str(self.is_calib)
+        if self.is_calib == 'true':
+            self.calib_judge['text'] = "SUCCESS!!"
+            self.calib_judge['bg'] = self.success_color
 
     def check_calib(self):
         calib = Calibrate(self.ipv4_address)
