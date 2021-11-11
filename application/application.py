@@ -33,6 +33,9 @@ class Application(tk.Frame):
         self.thread3 = None
         self.thread4 = None
         self.thread5 = None
+        self.thread6 = None # ↓tobii用のthread
+        self.thread7 = None
+        self.thread8 = None
 
         # canvas
         self.photo_image = None
@@ -69,16 +72,14 @@ class Application(tk.Frame):
 
         # データ読み込み用のタブ
         convert_tab = tk.Frame(notebook)
-
         # video,graph描画用のタブ
         plot_tab = tk.Frame(notebook)
-
         # tobiiのタブ
         tobii_tab = tk.Frame(notebook)
 
-        notebook.add(tobii_tab, text="tobii", padding=3)
-        notebook.add(convert_tab, text="convert", padding=3)
-        notebook.add(plot_tab, text="plot", padding=3)
+        notebook.add(tobii_tab, text="tobii", padding=10)
+        notebook.add(convert_tab, text="csv", padding=10)
+        notebook.add(plot_tab, text="plot", padding=10)
         notebook.pack(fill=tk.BOTH)
 
         # -----------------------------------------------tobii_tab--------------------------------------------
@@ -93,33 +94,33 @@ class Application(tk.Frame):
         t_movie.pack(side=tk.TOP, fill=tk.BOTH)
         self.t_canvas = tk.Canvas(t_movie, background="#000")
         self.t_canvas.pack(side=tk.TOP, fill=tk.BOTH)
-        t_status = tk.Button(t_l_sub, text="t_status", bg="blue")
-        t_status.pack(side=tk.TOP, fill=tk.BOTH)
-        recording_id = tk.Button(t_l_sub, text="recording_id")
-        recording_id.pack(side=tk.TOP, fill=tk.BOTH)
-        battery = tk.Button(t_l_sub, text="battery")
-        battery.pack(side=tk.TOP, fill=tk.BOTH)
-        sampling_rate = tk.Button(t_l_sub, text="sampling_rate")
-        sampling_rate.pack(side=tk.TOP, fill=tk.BOTH)
+        t_status = tk.Label(t_l_sub, text="t_status:", bg="blue")
+        t_status.pack(side=tk.TOP, anchor=tk.W)
+        recording_id = tk.Label(t_l_sub, text="recording_id:")
+        recording_id.pack(side=tk.TOP, anchor=tk.W)
+        battery = tk.Label(t_l_sub, text="battery:")
+        battery.pack(side=tk.TOP, anchor=tk.W)
+        sampling_rate = tk.Label(t_l_sub, text="sampling_rate:")
+        sampling_rate.pack(side=tk.TOP, anchor=tk.W)
 
-        calibration = tk.Button(t_r_sub, text="calibration")
+        calibration = tk.Button(t_r_sub, text="calibration", relief=tk.RAISED, bd=2)
         calibration.pack(side=tk.TOP, fill=tk.BOTH)
-        calib_judge = tk.Button(t_r_sub, text="error", bg="red")
+        calib_judge = tk.Button(t_r_sub, text="error", bg="red", relief=tk.RAISED, bd=2)
         calib_judge.pack(side=tk.TOP, fill=tk.BOTH)
-        recording_start = tk.Button(t_r_sub, text="start", command=self.play_tobii)
+        recording_start = tk.Button(t_r_sub, text="start", command=self.play_tobii, relief=tk.RAISED, bd=2)
         recording_start.pack(side=tk.TOP, fill=tk.BOTH)
         recording_time = tk.Label(t_r_sub, text="time : ")
-        recording_time.pack(side=tk.TOP, fill=tk.BOTH)
-        snapshot = tk.Button(t_r_sub, text="スクショ")
+        recording_time.pack(side=tk.TOP, anchor=tk.W)
+        snapshot = tk.Button(t_r_sub, text="snapshot", relief=tk.RAISED, bd=2)
         snapshot.pack(side=tk.TOP, fill=tk.BOTH)
-        recording_stop = tk.Button(t_r_sub, text="stop")
+        recording_stop = tk.Button(t_r_sub, text="stop", relief=tk.RAISED, bd=2)
         recording_stop.pack(side=tk.TOP, fill=tk.BOTH)
 
         # -----------------------------------------------convert_tab--------------------------------------------
         convert_main = tk.Frame(convert_tab, relief=tk.RAISED, bd=10)
         convert_main.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
 
-        self.gaze = tk.Frame(convert_main, relief=tk.RIDGE, bd=5)
+        self.gaze = tk.Frame(convert_main, relief=tk.RIDGE, bd=5, pady=10)
         self.gaze.pack(side=tk.TOP, fill=tk.BOTH)
         self.gaze_text = tk.Label(self.gaze, text="gaze")
         self.gaze_text.pack(side=tk.TOP, anchor=tk.W)
@@ -141,7 +142,7 @@ class Application(tk.Frame):
         self.gaze_status.pack(side=tk.RIGHT, anchor=tk.W, fill=tk.BOTH)
 
 
-        self.imu = tk.Frame(convert_main, relief=tk.RIDGE, bd=5)
+        self.imu = tk.Frame(convert_main, relief=tk.RIDGE, bd=5, pady=10)
         self.imu.pack(side=tk.TOP, fill=tk.BOTH)
         self.imu_text = tk.Label(self.imu, text="imu")
         self.imu_text.pack(side=tk.TOP, anchor=tk.W)
