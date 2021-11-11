@@ -25,6 +25,7 @@ class Application(tk.Frame):
         self.load_bt_color = "#fb2418"
         self.slider_bar_color = "#ffa500"
         self.graph_back_color = '#d9d9d9'
+        self.success_color = "#00e233"
 
         # マルチスレッド
         self.thread1 = None
@@ -124,16 +125,21 @@ class Application(tk.Frame):
         self.gaze_text.pack(side=tk.TOP, anchor=tk.W)
         self.i_gaze = tk.Frame(self.gaze)
         self.i_gaze.pack(side=tk.TOP, fill=tk.BOTH)
-        self.i_gaze_box = tk.Entry(self.i_gaze)
+        self.i_gaze_box = tk.Entry(self.i_gaze, width=80)
         self.i_gaze_box.pack(side=tk.LEFT, fill=tk.BOTH)
-        self.i_gaze_load = tk.Button(self.i_gaze, bg=self.load_bt_color, command=self.i_gaze_dialog)
+        self.i_gaze_load = tk.Button(self.i_gaze, bg=self.load_bt_color, command=self.i_gaze_dialog, text="input", width=10)
         self.i_gaze_load.pack(side=tk.LEFT, fill=tk.BOTH)
         self.o_gaze = tk.Frame(self.gaze)
         self.o_gaze.pack(side=tk.TOP, fill=tk.BOTH)
-        self.o_gaze_box = tk.Entry(self.o_gaze)
+        self.o_gaze_box = tk.Entry(self.o_gaze, width=80)
         self.o_gaze_box.pack(side=tk.LEFT, fill=tk.BOTH)
-        self.o_gaze_load = tk.Button(self.o_gaze, bg=self.load_bt_color, command=self.o_gaze_dialog)
+        self.o_gaze_load = tk.Button(self.o_gaze, bg=self.load_bt_color, command=self.o_gaze_dialog, text="output", width=10)
         self.o_gaze_load.pack(side=tk.LEFT, fill=tk.BOTH)
+        self.gaze_make = tk.Button(self.o_gaze, bg=self.load_bt_color, text="make", width=10, command=self.fetch_gaze)
+        self.gaze_make.pack(side=tk.RIGHT, anchor=tk.W, fill=tk.BOTH)
+        self.gaze_status = tk.Label(self.o_gaze, text="incomplete", width=10)
+        self.gaze_status.pack(side=tk.RIGHT, anchor=tk.W, fill=tk.BOTH)
+
 
         self.imu = tk.Frame(convert_main, relief=tk.RIDGE, bd=5)
         self.imu.pack(side=tk.TOP, fill=tk.BOTH)
@@ -141,16 +147,20 @@ class Application(tk.Frame):
         self.imu_text.pack(side=tk.TOP, anchor=tk.W)
         self.i_imu = tk.Frame(self.imu)
         self.i_imu.pack(side=tk.TOP, fill=tk.BOTH)
-        self.i_imu_box = tk.Entry(self.i_imu)
+        self.i_imu_box = tk.Entry(self.i_imu, width=80)
         self.i_imu_box.pack(side=tk.LEFT, fill=tk.BOTH)
-        self.i_imu_load = tk.Button(self.i_imu, bg=self.load_bt_color, command=self.i_imu_dialog)
+        self.i_imu_load = tk.Button(self.i_imu, bg=self.load_bt_color, command=self.i_imu_dialog, text="input", width=10)
         self.i_imu_load.pack(side=tk.LEFT, fill=tk.BOTH)
         self.o_imu = tk.Frame(self.imu)
         self.o_imu.pack(side=tk.TOP, fill=tk.BOTH)
-        self.o_imu_box = tk.Entry(self.o_imu)
+        self.o_imu_box = tk.Entry(self.o_imu, width=80)
         self.o_imu_box.pack(side=tk.LEFT, fill=tk.BOTH)
-        self.o_imu_load = tk.Button(self.o_imu, bg=self.load_bt_color, command=self.o_imu_dialog)
+        self.o_imu_load = tk.Button(self.o_imu, bg=self.load_bt_color, command=self.o_imu_dialog, text="output", width=10)
         self.o_imu_load.pack(side=tk.LEFT, fill=tk.BOTH)
+        self.imu_make = tk.Button(self.o_imu, bg=self.load_bt_color, text="make", width=10, command=self.fetch_imu)
+        self.imu_make.pack(side=tk.RIGHT, anchor=tk.W, fill=tk.BOTH)
+        self.imu_status = tk.Label(self.o_imu, text="incomplete", width=10)
+        self.imu_status.pack(side=tk.RIGHT, anchor=tk.W, fill=tk.BOTH)
 
 
 
@@ -203,9 +213,10 @@ class Application(tk.Frame):
         # input_csv_open用のボタン
         i_csv_load_button = tk.Button(
             i_csv_below_frame,
-            text='csv_path',
+            text='input',
             bg=self.load_bt_color,
-            command=self.i_csv_file_dialog
+            command=self.i_csv_file_dialog,
+            width=10,
         )
         i_csv_load_button.pack(side=tk.LEFT, anchor=tk.W)
 
@@ -227,9 +238,10 @@ class Application(tk.Frame):
         # input_video_open用のボタン
         i_video_load_button = tk.Button(
             i_video_below_frame,
-            text='video_path',
+            text='input',
             bg=self.load_bt_color,
-            command=self.i_video_file_dialog
+            command=self.i_video_file_dialog,
+            width=10,
         )
         i_video_load_button.pack(side=tk.LEFT, anchor=tk.W)
 
@@ -259,9 +271,10 @@ class Application(tk.Frame):
         # output_csv_open用のボタン
         o_csv_load_button = tk.Button(
             o_csv_below_frame,
-            text='csv_path',
+            text='output',
             bg=self.load_bt_color,
-            command=self.o_csv_file_dialog
+            command=self.o_csv_file_dialog,
+            width=10,
         )
         o_csv_load_button.pack(side=tk.LEFT, anchor=tk.W, expand=True)
 
@@ -284,9 +297,10 @@ class Application(tk.Frame):
         # output_video_open用のボタン
         o_video_load_button = tk.Button(
             o_video_below_frame,
-            text='video_path',
+            text='output',
             bg=self.load_bt_color,
-            command=self.o_video_file_dialog
+            command=self.o_video_file_dialog,
+            width=10,
         )
         o_video_load_button.pack(side=tk.LEFT, anchor=tk.W, expand=True)
 
@@ -307,60 +321,65 @@ class Application(tk.Frame):
 
     def i_csv_file_dialog(self):
         file_type = [("csv", "*.csv")]
-        initial_dir = os.path.dirname(__file__).rsplit("/", 1)[0]
-        self.csv_input_path = tk.filedialog.askopenfilename(initialdir=initial_dir)
+        initial_dir = os.path.dirname(os.path.abspath(__file__)).rsplit("/", 1)[0]
+        self.csv_input_path = tk.filedialog.askopenfilename(filetypes=file_type, initialdir=initial_dir)
         self.i_csv_text_box.delete(0, tk.END)
         self.i_csv_text_box.insert(tk.END, self.csv_input_path)
 
     def o_csv_file_dialog(self):
+        file_type = [("csv_file", "*.csv")]
         if self.csv_input_path != None:
+            initial_dir = os.path.dirname(os.path.abspath(__file__)).rsplit("/", 1)[0]
             initialfile = self.csv_input_path.rsplit(".", 1)[0].split("/")[-1] + "_OUTPUT.csv"
-            self.csv_output_path = tk.filedialog.asksaveasfilename(initialfile=initialfile)
+            self.csv_output_path = tk.filedialog.asksaveasfilename(filetypes=file_type, initialdir=initial_dir, initialfile=initialfile)
             self.o_csv_text_box.delete(0, tk.END)
             self.o_csv_text_box.insert(tk.END, self.csv_output_path)
 
     def i_video_file_dialog(self):
         file_type = [("MOV", "*.MOV"), ("mov", "*.mov"), ("mp4", "*.mp4")]
-        initial_dir = os.path.dirname(__file__).rsplit("/", 1)[0]
-        self.video_input_path = tk.filedialog.askopenfilename(initialdir=initial_dir)
+        initial_dir = os.path.dirname(os.path.abspath(__file__)).rsplit("/", 1)[0]
+        self.video_input_path = tk.filedialog.askopenfilename(filetypes=file_type, initialdir=initial_dir)
         self.i_video_text_box.delete(0, tk.END)
         self.i_video_text_box.insert(tk.END, self.video_input_path)
 
     def o_video_file_dialog(self):
-        file_type = [("mp4", ".mp4")]
+        file_type = [("mp4", "*.mp4")]
         if self.video_input_path != None:
+            initial_dir = os.path.dirname(os.path.abspath(__file__)).rsplit("/", 1)[0]
             initialfile = self.video_input_path.split("/")[-1].split(".")[0] + "_OUTPUT.MOV"
-            self.video_output_path = tk.filedialog.asksaveasfilename(initialfile=initialfile)
+            self.video_output_path = tk.filedialog.asksaveasfilename(filetypes=file_type, initialdir=initial_dir, initialfile=initialfile)
             self.o_video_text_box.delete(0, tk.END)
             self.o_video_text_box.insert(tk.END, self.video_output_path)
 
     def i_gaze_dialog(self):
-        file_type = [(".gz", "gz")]
-        initial_dir = os.path.dirname(__file__).rsplit("/", 1)[0]
-        self.gaze_input = tk.filedialog.askopenfilename(initialfile=initial_dir)
+        file_type = [("compress_file", "*.gz")]
+        initial_dir = os.path.dirname(os.path.abspath(__file__)).rsplit("/", 1)[0]
+        self.gaze_input = tk.filedialog.askopenfilename(filetypes=file_type, initialdir=initial_dir)
         self.i_gaze_box.delete(0, tk.END)
         self.i_gaze_box.insert(tk.END, self.gaze_input)
 
     def o_gaze_dialog(self):
-        file_type = [("csv", ".csv")]
+        file_type = [("output_file", "*.csv")]
         if self.gaze_input != None:
+            initial_dir = os.path.dirname(os.path.abspath(__file__)).rsplit("/", 1)[0]
             initialfile = self.gaze_input.split("/")[-1].split(".")[0] + ".csv"
-            self.gaze_output = tk.filedialog.asksaveasfilename(initialfile=initialfile)
+            self.gaze_output = tk.filedialog.asksaveasfilename(filetypes=file_type, initialdir=initial_dir, initialfile=initialfile)
             self.o_gaze_box.delete(0, tk.END)
             self.o_gaze_box.insert(tk.END, self.gaze_output)
 
     def i_imu_dialog(self):
-        file_type = [(".gz", "gz")]
-        initial_dir = os.path.dirname(__file__).rsplit("/", 1)[0]
-        self.imu_input = tk.filedialog.askopenfilename(initialfile=initial_dir)
+        file_type = [("compress_file", "*.gz")]
+        initial_dir = os.path.dirname(os.path.abspath(__file__)).rsplit("/", 1)[0]
+        self.imu_input = tk.filedialog.askopenfilename(filetypes=file_type, initialfile=initial_dir)
         self.i_imu_box.delete(0, tk.END)
         self.i_imu_box.insert(tk.END, self.imu_input)
 
     def o_imu_dialog(self):
-        file_type = [("csv", ".csv")]
+        file_type = [("output_file", "*.csv")]
         if self.imu_input != None:
+            initial_dir = os.path.dirname(os.path.abspath(__file__)).rsplit("/", 1)[0]
             initialfile = self.imu_input.split("/")[-1].split(".")[0] + ".csv"
-            self.imu_output = tk.filedialog.asksaveasfilename(initialfile=initialfile)
+            self.imu_output = tk.filedialog.asksaveasfilename(initialdir=initial_dir, initialfile=initialfile, filetypes=file_type)
             self.o_imu_box.delete(0, tk.END)
             self.o_imu_box.insert(tk.END, self.imu_output)
 
@@ -497,10 +516,14 @@ class Application(tk.Frame):
 
     def fetch_gaze(self):
         generator = GazeCsv()
+        self.gaze_status['text'] = "complete!"
+        self.gaze_status['bg'] = self.success_color
         return generator.gaze_json_to_pd(self.gaze_input, self.gaze_output)
 
     def fetch_imu(self):
         generator = GazeCsv()
+        self.imu_status['text'] = "complete!"
+        self.imu_status['bg'] = self.success_color
         return generator.imu_json_to_pd(self.imu_input, self.imu_output)
 
 if __name__ == "__main__":
