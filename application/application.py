@@ -4,6 +4,7 @@ import tkinter as tk
 import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
+import requests
 from PIL import Image, ImageTk, ImageOps
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
@@ -75,7 +76,7 @@ class Application(tk.Frame):
         self.rest_time = None
         self.rest_battery = None
 
-        self.calib_status = False
+        self.is_calib = False
         self.recording = False
 
         # graph関係
@@ -134,10 +135,10 @@ class Application(tk.Frame):
 
         calibration = tk.Button(t_r_sub, text="calibration", relief=tk.RAISED, bd=2, command=self.calib_record)
         calibration.pack(side=tk.TOP, fill=tk.BOTH)
-        self.calibration_status = tk.Label(t_r_sub, text="calibration_status:")
-        self.calibration_status.pack(side=tk.TOP, anchor=tk.W)
-        calib_judge = tk.Button(t_r_sub, text="error", bg="red", relief=tk.RAISED, bd=2)
-        calib_judge.pack(side=tk.TOP, fill=tk.BOTH)
+        self.calib_status = tk.Label(t_r_sub, text="x:None,    y:None")
+        self.calib_status.pack(side=tk.TOP, anchor=tk.W)
+        self.calib_judge = tk.Label(t_r_sub, text="FAILED", bg=self.load_bt_color)
+        self.calib_judge.pack(side=tk.TOP, anchor=tk.W)
         video_start = tk.Button(t_r_sub, text="start", command=self.play_tobii, relief=tk.RAISED, bd=2)
         video_start.pack(side=tk.TOP, fill=tk.BOTH)
         recording_start = tk.Button(t_r_sub, text="recording", command=self.start_record, relief=tk.RAISED, bd=2)
@@ -207,7 +208,7 @@ class Application(tk.Frame):
         canvas_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
 
         # video描画用のブロック
-        self.canvas_video = tk.Canvas(canvas_frame, background="#000", height=self.video_height)
+        self.canvas_video = tk.Canvas(canvas_frame, background="black", height=self.video_height)
         self.canvas_video.pack(anchor=tk.E, padx=(70, 0), pady=30, fill=tk.BOTH)
         self.update()
 
@@ -507,23 +508,18 @@ class Application(tk.Frame):
             return
 
     def play_video(self):
-        if self.video_playing == False:
-            self.video_playing = True
-            for i in range(self.data.shape[0]):
-                if self.x_scale.get() >= self.data.shape[0]:
-                    break
-                if self.video_playing == False:
-                    break
-                self.x_scale.set(self.x_scale.get() + 1)
-                self.plot_f()
-
-            if self.x_scale.get() >= self.data.shape[0]:
-                self.stop_video()
-                self.x_scale.set(0)
+        if (self.x_scale.get() <= self.data.shape[0]) & (self.video_playing==True):
+            self.x_scale.set(self.x_scale.get() + 1)
+            self.plot_f()
+            root.after(1, self.play_video)
         else:
-            return
+            if self.x_scale.get() >= self.data.shape[0]:
+                self.x_scale.set(0)
+            else:
+                return
 
     def play_video_f(self, event=None):
+        self.video_playing = True
         self.thread5 = threading.Thread(target=self.play_video)
         self.thread5.start()
 
@@ -604,26 +600,32 @@ class Application(tk.Frame):
 
     def calib_record(self):
         calib = Calibrate(self.ipv4_address)
-        self.calib_status = calib.calibrate()
-        self.calibration_status['text'] = "calibration_status:" + str(self.calib_status)
+        self.is_calib = calib.calibrate()
+        self.calib_judge['text'] = "calibration_status:" + str(self.is_calib)
+
+    def check_calib(self):
+        calib = Calibrate(self.ipv4_address)
+        for i in range(10):
+            calib.test_calibrate()
+            self.calib_status['text'] = "x:" + calib.x + ",    " + "y:" + calib.y
 
 
     def start_record(self):
-        if self.calib_status == 'true':
+        if self.is_calib == 'true':
             if self.recording == False:
                 self.recording = True
                 rec = Recorder(self.ipv4_address)
                 rec.start()
 
     def stop_record(self):
-        if self.calib_status == 'true':
+        if self.is_calib == 'true':
             if self.recording == True:
                 self.recording = False
                 rec = Recorder(self.ipv4_address)
                 rec.stop()
 
     def snapshot_record(self):
-        if self.calib_status == 'true':
+        if self.is_calib == 'true':
             rec = Recorder(self.ipv4_address)
             rec.snapshot()
 
