@@ -9,6 +9,9 @@ from matplotlib.figure import Figure
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from convertor import convertor
 from generater.gen_csv import GazeCsv
+from tobii.calibrate import Calibrate
+from tobii.recorder import Recorder
+from tobii.utils import Settings
 from tkinter import ttk
 import threading
 
@@ -94,24 +97,38 @@ class Application(tk.Frame):
         t_movie.pack(side=tk.TOP, fill=tk.BOTH)
         self.t_canvas = tk.Canvas(t_movie, background="#000")
         self.t_canvas.pack(side=tk.TOP, fill=tk.BOTH)
-        t_status = tk.Label(t_l_sub, text="t_status:", bg="blue")
+        t_status = tk.Label(t_l_sub, text="t_status:None", bg="blue")
         t_status.pack(side=tk.TOP, anchor=tk.W)
-        recording_id = tk.Label(t_l_sub, text="recording_id:")
-        recording_id.pack(side=tk.TOP, anchor=tk.W)
-        battery = tk.Label(t_l_sub, text="battery:")
-        battery.pack(side=tk.TOP, anchor=tk.W)
-        sampling_rate = tk.Label(t_l_sub, text="sampling_rate:")
-        sampling_rate.pack(side=tk.TOP, anchor=tk.W)
+        _uuid = tk.Label(t_l_sub, text="                           uuid:")
+        _uuid.pack(side=tk.TOP, anchor=tk.W)
+        _current_folder = tk.Label(t_l_sub, text="            current folder:")
+        _current_folder.pack(side=tk.TOP, anchor=tk.W)
+        _starting_time = tk.Label(t_l_sub, text="              started time:")
+        _starting_time.pack(side=tk.TOP, anchor=tk.W)
+        _total_time = tk.Label(t_l_sub, text="                  total time:")
+        _total_time.pack(side=tk.TOP, anchor=tk.W)
+        _gaze_frequency = tk.Label(t_l_sub, text="         gaze frequency:")
+        _gaze_frequency.pack(side=tk.TOP, anchor=tk.W)
+        _gaze_sample_number = tk.Label(t_l_sub, text="gaze sample number:")
+        _gaze_sample_number.pack(side=tk.TOP, anchor=tk.W)
+        _valid_gaze_samples = tk.Label(t_l_sub, text="   valid gaze samples:")
+        _valid_gaze_samples.pack(side=tk.TOP, anchor=tk.W)
+        _rest_time = tk.Label(t_l_sub, text="                    rest time:")
+        _rest_time.pack(side=tk.TOP, anchor=tk.W)
+        _rest_battery = tk.Label(t_l_sub, text="                rest battery:")
+        _rest_battery.pack(side=tk.TOP, anchor=tk.W)
 
         calibration = tk.Button(t_r_sub, text="calibration", relief=tk.RAISED, bd=2)
         calibration.pack(side=tk.TOP, fill=tk.BOTH)
+        calibration_status = tk.Label(t_r_sub, text="calibration_status:None")
+        calibration_status.pack(side=tk.TOP, anchor=tk.W)
         calib_judge = tk.Button(t_r_sub, text="error", bg="red", relief=tk.RAISED, bd=2)
         calib_judge.pack(side=tk.TOP, fill=tk.BOTH)
         recording_start = tk.Button(t_r_sub, text="start", command=self.play_tobii, relief=tk.RAISED, bd=2)
         recording_start.pack(side=tk.TOP, fill=tk.BOTH)
-        recording_time = tk.Label(t_r_sub, text="time : ")
+        recording_time = tk.Label(t_r_sub, text="time:None")
         recording_time.pack(side=tk.TOP, anchor=tk.W)
-        snapshot = tk.Button(t_r_sub, text="snapshot", relief=tk.RAISED, bd=2)
+        snapshot = tk.Button(t_r_sub, text="snapshot", relief=tk.RAISED, bd=2, command=self.fecth_tobii_info)
         snapshot.pack(side=tk.TOP, fill=tk.BOTH)
         recording_stop = tk.Button(t_r_sub, text="stop", relief=tk.RAISED, bd=2)
         recording_stop.pack(side=tk.TOP, fill=tk.BOTH)
@@ -526,6 +543,40 @@ class Application(tk.Frame):
         self.imu_status['text'] = "complete!"
         self.imu_status['bg'] = self.success_color
         return generator.imu_json_to_pd(self.imu_input, self.imu_output)
+
+    def fecth_tobii_info(self):
+        rec = Recorder(self.ipv4_address)
+        setting = Settings(self.ipv4_address)
+
+        gaze_frequency = rec.gaze_frequency()
+        current_folder = rec.current_folder_name()
+        gaze_sample_number = rec.gaze_sampling_number()
+        rest_time = rec.rest_time()
+        total_time = rec.total_time()
+        valid_gaze_samples = rec.valid_gaze_sample()
+        uuid = rec.uuid()
+        starting_time = rec.stating_time()
+        rest_battery = setting.rest_battery()
+
+        print("success")
+
+        info_dic = {
+            "uuid": uuid,
+            "current_folder": current_folder,
+            "starting_time": starting_time,
+            "total_time": total_time,
+            "gaze_frequency": gaze_frequency,
+            "gaze_sample_number": gaze_sample_number,
+            "valid_gaze_samples": valid_gaze_samples,
+            "rest_time": rest_time,
+            "rest_battery": rest_battery,
+        }
+
+        print(info_dic)
+
+        return info_dic
+
+
 
 if __name__ == "__main__":
     fig = Figure(figsize=(8, 3), dpi=100)
