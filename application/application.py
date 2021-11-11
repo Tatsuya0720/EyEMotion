@@ -64,6 +64,20 @@ class Application(tk.Frame):
         self.video_width = 790
         self.video_height = 450
 
+        # tobii関係
+        self.uuid = None
+        self.current_folder = None
+        self.starting_time = None
+        self.total_time = None
+        self.gaze_frequency = None
+        self.gaze_sample_number = None
+        self.valid_gaze_samples = None
+        self.rest_time = None
+        self.rest_battery = None
+
+        self.calib_status = False
+        self.recording = False
+
         # graph関係
         self.x_range = int(128 / 2)
         self.eeg_min = 4000
@@ -99,39 +113,43 @@ class Application(tk.Frame):
         self.t_canvas.pack(side=tk.TOP, fill=tk.BOTH)
         t_status = tk.Label(t_l_sub, text="t_status:None", bg="blue")
         t_status.pack(side=tk.TOP, anchor=tk.W)
-        _uuid = tk.Label(t_l_sub, text="                           uuid:")
-        _uuid.pack(side=tk.TOP, anchor=tk.W)
-        _current_folder = tk.Label(t_l_sub, text="            current folder:")
-        _current_folder.pack(side=tk.TOP, anchor=tk.W)
-        _starting_time = tk.Label(t_l_sub, text="              started time:")
-        _starting_time.pack(side=tk.TOP, anchor=tk.W)
-        _total_time = tk.Label(t_l_sub, text="                  total time:")
-        _total_time.pack(side=tk.TOP, anchor=tk.W)
-        _gaze_frequency = tk.Label(t_l_sub, text="         gaze frequency:")
-        _gaze_frequency.pack(side=tk.TOP, anchor=tk.W)
-        _gaze_sample_number = tk.Label(t_l_sub, text="gaze sample number:")
-        _gaze_sample_number.pack(side=tk.TOP, anchor=tk.W)
-        _valid_gaze_samples = tk.Label(t_l_sub, text="   valid gaze samples:")
-        _valid_gaze_samples.pack(side=tk.TOP, anchor=tk.W)
-        _rest_time = tk.Label(t_l_sub, text="                    rest time:")
-        _rest_time.pack(side=tk.TOP, anchor=tk.W)
-        _rest_battery = tk.Label(t_l_sub, text="                rest battery:")
-        _rest_battery.pack(side=tk.TOP, anchor=tk.W)
+        self.uuid_box = tk.Label(t_l_sub, text="                           uuid:")
+        self.uuid_box.pack(side=tk.TOP, anchor=tk.W)
+        self.current_folder_box = tk.Label(t_l_sub, text="            current folder:")
+        self.current_folder_box.pack(side=tk.TOP, anchor=tk.W)
+        self.starting_time_box = tk.Label(t_l_sub, text="              started time:")
+        self.starting_time_box.pack(side=tk.TOP, anchor=tk.W)
+        self.total_time_box = tk.Label(t_l_sub, text="                  total time:")
+        self.total_time_box.pack(side=tk.TOP, anchor=tk.W)
+        self.gaze_frequency_box = tk.Label(t_l_sub, text="         gaze frequency:")
+        self.gaze_frequency_box.pack(side=tk.TOP, anchor=tk.W)
+        self.gaze_sample_number_box = tk.Label(t_l_sub, text="gaze sample number:")
+        self.gaze_sample_number_box.pack(side=tk.TOP, anchor=tk.W)
+        self.valid_gaze_samples_box = tk.Label(t_l_sub, text="   valid gaze samples:")
+        self.valid_gaze_samples_box.pack(side=tk.TOP, anchor=tk.W)
+        self.rest_time_box = tk.Label(t_l_sub, text="                    rest time:")
+        self.rest_time_box.pack(side=tk.TOP, anchor=tk.W)
+        self.rest_battery_box = tk.Label(t_l_sub, text="                rest battery:")
+        self.rest_battery_box.pack(side=tk.TOP, anchor=tk.W)
 
-        calibration = tk.Button(t_r_sub, text="calibration", relief=tk.RAISED, bd=2)
+        calibration = tk.Button(t_r_sub, text="calibration", relief=tk.RAISED, bd=2, command=self.calib_record)
         calibration.pack(side=tk.TOP, fill=tk.BOTH)
-        calibration_status = tk.Label(t_r_sub, text="calibration_status:None")
-        calibration_status.pack(side=tk.TOP, anchor=tk.W)
+        self.calibration_status = tk.Label(t_r_sub, text="calibration_status:")
+        self.calibration_status.pack(side=tk.TOP, anchor=tk.W)
         calib_judge = tk.Button(t_r_sub, text="error", bg="red", relief=tk.RAISED, bd=2)
         calib_judge.pack(side=tk.TOP, fill=tk.BOTH)
-        recording_start = tk.Button(t_r_sub, text="start", command=self.play_tobii, relief=tk.RAISED, bd=2)
+        video_start = tk.Button(t_r_sub, text="start", command=self.play_tobii, relief=tk.RAISED, bd=2)
+        video_start.pack(side=tk.TOP, fill=tk.BOTH)
+        recording_start = tk.Button(t_r_sub, text="recording", command=self.start_record, relief=tk.RAISED, bd=2)
         recording_start.pack(side=tk.TOP, fill=tk.BOTH)
         recording_time = tk.Label(t_r_sub, text="time:None")
         recording_time.pack(side=tk.TOP, anchor=tk.W)
-        snapshot = tk.Button(t_r_sub, text="snapshot", relief=tk.RAISED, bd=2, command=self.fecth_tobii_info)
+        snapshot = tk.Button(t_r_sub, text="snapshot", relief=tk.RAISED, bd=2, command=self.snapshot_record)
         snapshot.pack(side=tk.TOP, fill=tk.BOTH)
-        recording_stop = tk.Button(t_r_sub, text="stop", relief=tk.RAISED, bd=2)
+        recording_stop = tk.Button(t_r_sub, text="stop", command=self.stop_record(), relief=tk.RAISED, bd=2)
         recording_stop.pack(side=tk.TOP, fill=tk.BOTH)
+        update = tk.Button(t_r_sub, text="update", relief=tk.RAISED, bd=2, command=self.fecth_tobii_info)
+        update.pack(side=tk.TOP, fill=tk.BOTH)
 
         # -----------------------------------------------convert_tab--------------------------------------------
         convert_main = tk.Frame(convert_tab, relief=tk.RAISED, bd=10)
@@ -476,29 +494,6 @@ class Application(tk.Frame):
             image=self.image  # 表示画像データ
         )
 
-    def play_tobii(self):
-        self.t_capture = cv2.VideoCapture("rtsp://" + self.ipv4_address + ":8554/live/all")
-        self.disp_t_movie()
-
-    def disp_t_movie(self):
-        ret, frame = self.t_capture.read()
-        cv_image = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-        pil_image = Image.fromarray(cv_image)
-
-        t_canvas_width = self.t_canvas.winfo_width()
-        t_canvas_height = self.t_canvas.winfo_height()
-
-        pil_image = ImageOps.pad(pil_image, (t_canvas_width, t_canvas_height))
-        self.photo_image = ImageTk.PhotoImage(image=pil_image)
-
-        self.t_canvas.create_image(
-            t_canvas_width / 2,  # 画像表示位置(Canvasの中心)
-            t_canvas_height / 2,
-            image=self.photo_image  # 表示画像データ
-        )
-
-        self.master.after(2, self.disp_t_movie)
-
     def plot_f(self, event=None):
         if self.video_input_path != None:
             self.video_plot()
@@ -531,6 +526,29 @@ class Application(tk.Frame):
     def play_video_f(self, event=None):
         self.thread5 = threading.Thread(target=self.play_video)
         self.thread5.start()
+
+    def play_tobii(self):
+        self.t_capture = cv2.VideoCapture("rtsp://" + self.ipv4_address + ":8554/live/all")
+        self.disp_t_movie()
+
+    def disp_t_movie(self):
+        ret, frame = self.t_capture.read()
+        cv_image = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+        pil_image = Image.fromarray(cv_image)
+
+        t_canvas_width = self.t_canvas.winfo_width()
+        t_canvas_height = self.t_canvas.winfo_height()
+
+        pil_image = ImageOps.pad(pil_image, (t_canvas_width, t_canvas_height))
+        self.photo_image = ImageTk.PhotoImage(image=pil_image)
+
+        self.t_canvas.create_image(
+            t_canvas_width / 2,  # 画像表示位置(Canvasの中心)
+            t_canvas_height / 2,
+            image=self.photo_image  # 表示画像データ
+        )
+
+        self.master.after(2, self.disp_t_movie)
 
     def fetch_gaze(self):
         generator = GazeCsv()
@@ -572,11 +590,42 @@ class Application(tk.Frame):
             "rest_battery": rest_battery,
         }
 
-        print(info_dic)
+        self.uuid_box['text'] = "                           uuid:" + str(uuid)
+        self.current_folder_box['text'] = '            current folder:' + str(current_folder)
+        self.starting_time_box['text'] = '              started time:' + str(starting_time)
+        self.total_time_box['text'] = '              started time:' + str(starting_time)
+        self.gaze_frequency_box['text'] = '         gaze frequency:' + str(gaze_frequency)
+        self.gaze_sample_number_box['text'] = 'gaze sample number:' + str(gaze_sample_number)
+        self.valid_gaze_samples_box['text'] = '   valid gaze samples:' + str(valid_gaze_samples)
+        self.rest_time_box['text'] = '                    rest time:' + str(rest_time)
+        self.rest_battery_box['text'] = '                rest battery:' + str(rest_battery)
 
         return info_dic
 
+    def calib_record(self):
+        calib = Calibrate(self.ipv4_address)
+        self.calib_status = calib.calibrate()
+        self.calibration_status['text'] = "calibration_status:" + str(self.calib_status)
 
+
+    def start_record(self):
+        if self.calib_status == 'true':
+            if self.recording == False:
+                self.recording = True
+                rec = Recorder(self.ipv4_address)
+                rec.start()
+
+    def stop_record(self):
+        if self.calib_status == 'true':
+            if self.recording == True:
+                self.recording = False
+                rec = Recorder(self.ipv4_address)
+                rec.stop()
+
+    def snapshot_record(self):
+        if self.calib_status == 'true':
+            rec = Recorder(self.ipv4_address)
+            rec.snapshot()
 
 if __name__ == "__main__":
     fig = Figure(figsize=(8, 3), dpi=100)
