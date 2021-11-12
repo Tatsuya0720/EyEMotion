@@ -4,7 +4,6 @@ import tkinter as tk
 import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
-import requests
 from PIL import Image, ImageTk, ImageOps
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
@@ -157,6 +156,9 @@ class Application(tk.Frame):
         # -----------------------------------------------convert_tab--------------------------------------------
         convert_main = tk.Frame(convert_tab, relief=tk.RAISED, bd=10)
         convert_main.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+
+        convert_discription = tk.Label(convert_main, text="generate csv from sd card", pady=10)
+        convert_discription.pack(side=tk.TOP, anchor=tk.W)
 
         self.gaze = tk.Frame(convert_main, relief=tk.RIDGE, bd=5, pady=10)
         self.gaze.pack(side=tk.TOP, fill=tk.BOTH)
