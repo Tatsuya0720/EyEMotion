@@ -62,7 +62,7 @@ class Recorder:
         """
         :return: 録画中の動画のuuid
         """
-        return requests.get(self.default+"recorder.duration").json()
+        return requests.get(self.default+"recorder.uuid").json()
 
     def valid_gaze_sample(self):
         """
