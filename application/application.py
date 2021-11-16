@@ -113,8 +113,8 @@ class Application(tk.Frame):
         #t_movie.pack(side=tk.TOP, fill=tk.BOTH, expand=True) #白い境界線ができてる...
         self.t_canvas = tk.Canvas(t_l_sub, background="#000")
         self.t_canvas.pack(side=tk.TOP, fill=tk.BOTH, expand=True)
-        t_status = tk.Label(t_l_sub, text="                     t_status:")
-        t_status.pack(side=tk.TOP, anchor=tk.W)
+        #t_status = tk.Label(t_l_sub, text="                     t_status:")
+        #t_status.pack(side=tk.TOP, anchor=tk.W)
         self.uuid_box = tk.Label(t_l_sub, text="                           uuid:")
         self.uuid_box.pack(side=tk.TOP, anchor=tk.W)
         self.current_folder_box = tk.Label(t_l_sub, text="            current folder:")
