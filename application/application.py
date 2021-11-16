@@ -530,7 +530,7 @@ class Application(tk.Frame):
     def real_time_rtsp(self):
         if self.tobii_playing==False:
             self.tobii_playing = True
-            self.t_capture = cv2.VideoCapture("rtsp://" + self.ipv4_address + ":8554/live/all")
+            self.t_capture = cv2.VideoCapture("rtsp://" + self.ipv4_address + ":8554/live/all?gaze-overlay=true")
             self.thread8 = threading.Thread(target=self.fetch_tobii_info())
             self.thread9 = threading.Thread(target=self.disp_t_movie())
             self.thread8.start()
