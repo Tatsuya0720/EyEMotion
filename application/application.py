@@ -2,6 +2,7 @@ import cv2
 import os
 import tkinter as tk
 import matplotlib.pyplot as plt
+import datetime
 import pandas as pd
 import numpy as np
 from PIL import Image, ImageTk, ImageOps
@@ -113,24 +114,20 @@ class Application(tk.Frame):
         #t_movie.pack(side=tk.TOP, fill=tk.BOTH, expand=True) #白い境界線ができてる...
         self.t_canvas = tk.Canvas(t_l_sub, background="#000")
         self.t_canvas.pack(side=tk.TOP, fill=tk.BOTH, expand=True)
-        #t_status = tk.Label(t_l_sub, text="                     t_status:")
-        #t_status.pack(side=tk.TOP, anchor=tk.W)
         self.uuid_box = tk.Label(t_l_sub, text="                           uuid:")
         self.uuid_box.pack(side=tk.TOP, anchor=tk.W)
         self.current_folder_box = tk.Label(t_l_sub, text="            current folder:")
         self.current_folder_box.pack(side=tk.TOP, anchor=tk.W)
         self.starting_time_box = tk.Label(t_l_sub, text="              started time:")
         self.starting_time_box.pack(side=tk.TOP, anchor=tk.W)
-        self.total_time_box = tk.Label(t_l_sub, text="                  total time:")
-        self.total_time_box.pack(side=tk.TOP, anchor=tk.W)
         self.gaze_frequency_box = tk.Label(t_l_sub, text="         gaze frequency:")
         self.gaze_frequency_box.pack(side=tk.TOP, anchor=tk.W)
         self.gaze_sample_number_box = tk.Label(t_l_sub, text="gaze sample number:")
         self.gaze_sample_number_box.pack(side=tk.TOP, anchor=tk.W)
         self.valid_gaze_samples_box = tk.Label(t_l_sub, text="   valid gaze samples:")
         self.valid_gaze_samples_box.pack(side=tk.TOP, anchor=tk.W)
-        recording_time = tk.Label(t_l_sub, text="           recording time:")
-        recording_time.pack(side=tk.TOP, anchor=tk.W)
+        self.recording_time = tk.Label(t_l_sub, text="           recording time:")
+        self.recording_time.pack(side=tk.TOP, anchor=tk.W)
         self.rest_time_box = tk.Label(t_l_sub, text="                    rest time:")
         self.rest_time_box.pack(side=tk.TOP, anchor=tk.W)
         self.rest_battery_box = tk.Label(t_l_sub, text="                rest battery:")
@@ -599,9 +596,9 @@ class Application(tk.Frame):
             current_folder = rec.current_folder_name()
             gaze_sample_number = rec.gaze_sampling_number()
             rest_time = rec.rest_time()
-            total_time = rec.total_time()
             valid_gaze_samples = rec.valid_gaze_sample()
             uuid = rec.uuid()
+            recording_time = rec.total_time()
             starting_time = rec.stating_time()
             rest_battery = setting.rest_battery()
 
@@ -609,7 +606,6 @@ class Application(tk.Frame):
                 "uuid": uuid,
                 "current_folder": current_folder,
                 "starting_time": starting_time,
-                "total_time": total_time,
                 "gaze_frequency": gaze_frequency,
                 "gaze_sample_number": gaze_sample_number,
                 "valid_gaze_samples": valid_gaze_samples,
@@ -620,10 +616,10 @@ class Application(tk.Frame):
             self.uuid_box['text'] = "                           uuid:" + str(uuid)
             self.current_folder_box['text'] = '            current folder:' + str(current_folder)
             self.starting_time_box['text'] = '              started time:' + str(starting_time)
-            self.total_time_box['text'] = '              started time:' + str(starting_time)
             self.gaze_frequency_box['text'] = '         gaze frequency:' + str(gaze_frequency)
             self.gaze_sample_number_box['text'] = 'gaze sample number:' + str(gaze_sample_number)
             self.valid_gaze_samples_box['text'] = '   valid gaze samples:' + str(valid_gaze_samples)
+            self.recording_time['text'] = "           recording time:" + str(datetime.timedelta(seconds=int(recording_time)))
             self.rest_time_box['text'] = '                    rest time:' + str(rest_time)
             self.rest_battery_box['text'] = '                rest battery:' + str(rest_battery)
 
@@ -658,17 +654,14 @@ class Application(tk.Frame):
 
     def start_record(self):
         if self.is_calib == 'true':
-            if self.recording == False:
-                self.recording = True
-                rec = Recorder(self.ipv4_address)
-                rec.start()
+            self.recording = True
+            rec = Recorder(self.ipv4_address)
+            rec.start()
 
     def stop_record(self):
-        if self.is_calib == 'true':
-            if self.recording == True:
-                self.recording = False
-                rec = Recorder(self.ipv4_address)
-                rec.stop()
+        self.recording = False
+        rec = Recorder(self.ipv4_address)
+        rec.stop()
 
     def snapshot_record(self):
         if self.is_calib == 'true':
