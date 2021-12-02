@@ -17,6 +17,7 @@ class Convertor:
         self.eeg = pd.read_csv(self.csv_input_path)
         self.eeg = self.eeg.rename(columns={self.eeg.columns[0]: "title"})
         self.eeg = self.eeg.rename(columns={self.eeg.columns[2]: "sampling"})
+        self.columns = self.eeg.columns
 
         # 動画データのパラメータ
         self.total_video_frame = self.cap.get(cv2.CAP_PROP_FRAME_COUNT)
@@ -90,16 +91,19 @@ class Convertor:
             f = interpolate.interp1d(x, self.eeg.iloc[:, i])
             rx = np.arange(np.min(x), np.max(x) + self.up_sampling_sr / 10, self.up_sampling_sr)
             ry_cubic = f(rx)
-            up_data["m" + str(i)] = ry_cubic
+            # up_data["m" + str(i)] = ry_cubic
+            up_data[self.columns[i]] = ry_cubic
 
         self.down_sampling_sr = int(self.common_multiple / self.video_fps)
 
         down_data = pd.DataFrame()
         for i in range(up_data.shape[1]):
             tmp = decimate(up_data.iloc[:, i], self.down_sampling_sr, axis=0)
-            down_data["m" + str(i)] = tmp
+            # down_data["m" + str(i)] = tmp
+            down_data[self.columns[i]] = tmp
 
-        down_data["m0"] = np.linspace(0, down_data.shape[0], down_data.shape[0]).astype(np.int)
+        # down_data["m0"] = np.linspace(0, down_data.shape[0], down_data.shape[0]).astype(np.int)
+        down_data[self.columns[0]] = np.linspace(0, down_data.shape[0], down_data.shape[0]).astype(np.int)
 
         if csv_output_path is not None:
             down_data.to_csv(csv_output_path, index=False)
