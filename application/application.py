@@ -470,14 +470,15 @@ class Application(tk.Frame):
         self.eeg_max = self.data.iloc[:, 2].max()
         tmp = pd.DataFrame(index=range(self.x_range), columns=self.data.columns).fillna(0)
         self.data = pd.concat([tmp, self.data], axis=0)
-        self.data["m0"] = np.linspace(0, self.data.shape[0], self.data.shape[0]).astype(np.int)
+        self.data[self.data.columns[0]] = np.linspace(0, self.data.shape[0], self.data.shape[0]).astype(np.int)
         self.x_scale["to"] = self.data.shape[0]
 
     def draw_plot(self, event=None):
         x = self.x_scale.get()
         ax.set_xlim(x, x + self.x_range)
         ax.set_ylim(self.eeg_min, self.eeg_max)
-        plt.axvline((x + self.x_range * 2) / 2, self.eeg_min, self.eeg_max)
+        ax.vlines((x + 128) / 2, self.eeg_min, self.eeg_max)
+        # plt.axvline((x + self.x_range * 2) / 2, self.eeg_min, self.eeg_max)
         h.set_xdata(self.data.iloc[int(x):int(x + self.x_range), 0])
         h.set_ydata(self.data.iloc[int(x):int(x + self.x_range), 2])
         self.graph.draw()
