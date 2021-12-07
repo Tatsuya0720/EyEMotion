@@ -54,7 +54,7 @@ class Convertor:
                 # ビデオのカット
                 video = VideoFileClip(self.mp4_input_path).subclip(cap_start_diff)
                 video.write_videofile(mp4_output_path, codec='libx264')
-                self.attention_csv = self.attention_csv.iloc[self.video_fps*cap_start_diff:]
+                self.attention_csv = self.attention_csv.iloc[int(self.video_fps*cap_start_diff):]
                 # EEGデータのカット
                 self.eeg = self.eeg.iloc[0:int(self.total_eeg_frame - self.eeg_fps * cap_end_diff), :]
             elif self.video_end_time > self.eeg_end_time:  # case2
@@ -62,7 +62,7 @@ class Convertor:
                 video = VideoFileClip(self.mp4_input_path).subclip(cap_start_diff,
                                                                    self.video_play_time - cap_end_diff)
                 video.write_videofile(mp4_output_path, codec='libx264')
-                self.attention_csv = self.attention_csv.iloc[self.video_fps*cap_start_diff:self.video_fps*cap_end_diff]
+                self.attention_csv = self.attention_csv.iloc[int(self.video_fps*cap_start_diff):int(self.video_fps*cap_end_diff)]
 
         elif self.video_start_time > self.eeg_start_time:
             if self.video_end_time <= self.eeg_end_time:  # case3
@@ -71,7 +71,7 @@ class Convertor:
             elif self.video_end_time > self.eeg_end_time:  # case4
                 video = VideoFileClip(self.mp4_input_path).subclip(0, self.video_play_time - cap_end_diff)
                 video.write_videofile(mp4_output_path, codec='libx264')
-                self.attention_csv = self.attention_csv.iloc[:self.video_fps*cap_end_diff]
+                self.attention_csv = self.attention_csv.iloc[:int(self.video_fps*cap_end_diff)]
                 self.eeg = self.eeg.iloc[int(cap_start_diff):int(self.total_eeg_frame), :]
 
         if csv_output_path is not None:
