@@ -5,6 +5,7 @@ import pandas as pd
 from moviepy.editor import *
 from scipy import interpolate
 from scipy.signal import decimate
+from scipy.signal import resample
 from datetime import datetime, timedelta
 
 
@@ -37,7 +38,7 @@ class Convertor:
         self.eeg_end_time = self.eeg_start_time + timedelta(seconds=self.eeg_play_time)
 
         # お互いのサンプリングレートの最小公倍数
-        self.common_multiple = int(self.video_fps * self.eeg_fps / math.gcd(int(self.video_fps), int(self.eeg_fps)))
+        self.common_multiple = np.lcm(int(self.video_fps), int(self.eeg_fps))#int(self.video_fps * self.eeg_fps / math.gcd(int(self.video_fps), int(self.eeg_fps)))
 
     def fit_length(self, mp4_output_path, csv_output_path=None):
 
@@ -53,26 +54,29 @@ class Convertor:
             if self.video_end_time <= self.eeg_end_time:  # case1
                 # ビデオのカット
                 video = VideoFileClip(self.mp4_input_path).subclip(cap_start_diff)
+                video = video.set_fps(50)
                 video.write_videofile(mp4_output_path, codec='libx264')
-                self.attention_csv = self.attention_csv.iloc[int(self.video_fps*cap_start_diff):]
+                self.attention_csv = self.attention_csv.iloc[int(self.video_fps*cap_start_diff):, :]
                 # EEGデータのカット
                 self.eeg = self.eeg.iloc[0:int(self.total_eeg_frame - self.eeg_fps * cap_end_diff), :]
             elif self.video_end_time > self.eeg_end_time:  # case2
                 # 動画データのカットのみで良い
                 video = VideoFileClip(self.mp4_input_path).subclip(cap_start_diff,
                                                                    self.video_play_time - cap_end_diff)
+                video = video.set_fps(50)
                 video.write_videofile(mp4_output_path, codec='libx264')
-                self.attention_csv = self.attention_csv.iloc[int(self.video_fps*cap_start_diff):int(self.video_fps*cap_end_diff)]
+                self.attention_csv = self.attention_csv.iloc[int(self.video_fps*cap_start_diff):-int(self.video_fps*cap_end_diff), :]
 
         elif self.video_start_time > self.eeg_start_time:
             if self.video_end_time <= self.eeg_end_time:  # case3
                 # EEGデータのカットのみで良い
-                self.eeg = self.eeg.iloc[int(cap_start_diff):int(self.total_eeg_frame - self.eeg_fps * cap_end_diff), :]
+                self.eeg = self.eeg.iloc[int(self.eeg_fps*cap_start_diff):int(self.total_eeg_frame - self.eeg_fps * cap_end_diff), :]
             elif self.video_end_time > self.eeg_end_time:  # case4
                 video = VideoFileClip(self.mp4_input_path).subclip(0, self.video_play_time - cap_end_diff)
+                video = video.set_fps(50)
                 video.write_videofile(mp4_output_path, codec='libx264')
-                self.attention_csv = self.attention_csv.iloc[:int(self.video_fps*cap_end_diff)]
-                self.eeg = self.eeg.iloc[int(cap_start_diff):int(self.total_eeg_frame), :]
+                self.attention_csv = self.attention_csv.iloc[:-int(self.video_fps*cap_end_diff)]
+                self.eeg = self.eeg.iloc[int(self.eeg_fps*cap_start_diff):, :]
 
         if csv_output_path is not None:
             self.eeg.to_csv(csv_output_path, index=False)
@@ -91,22 +95,22 @@ class Convertor:
     def fit_sampling_rate(self, csv_output_path=None):
         x = np.linspace(0, self.eeg.shape[0], self.eeg.shape[0])
         up_data = pd.DataFrame()
-        self.up_sampling_sr = float(self.eeg_fps / self.common_multiple)
+        """self.up_sampling_sr = float(self.eeg_fps / self.common_multiple)
 
         for i in range(self.eeg.shape[1]):
             f = interpolate.interp1d(x, self.eeg.iloc[:, i])
             rx = np.arange(np.min(x), np.max(x) + self.up_sampling_sr / 10, self.up_sampling_sr)
             ry_cubic = f(rx)
             # up_data["m" + str(i)] = ry_cubic
-            up_data[self.columns[i]] = ry_cubic
+            up_data[self.columns[i]] = ry_cubic"""
+        for i in range(self.eeg.shape[1]):
+            up_data[self.columns[i]] = resample(self.eeg.iloc[:,i], 25*self.eeg.shape[0])
 
         self.down_sampling_sr = int(self.common_multiple / self.video_fps)
 
         down_data = pd.DataFrame()
         for i in range(up_data.shape[1]):
-            tmp = decimate(up_data.iloc[:, i], self.down_sampling_sr, axis=0)
-            # down_data["m" + str(i)] = tmp
-            down_data[self.columns[i]] = tmp
+            down_data[self.columns[i]] = decimate(up_data.iloc[:, i], 64, axis=0)
 
         # down_data["m0"] = np.linspace(0, down_data.shape[0], down_data.shape[0]).astype(np.int)
         down_data[self.columns[0]] = np.linspace(0, down_data.shape[0], down_data.shape[0]).astype(np.int)
