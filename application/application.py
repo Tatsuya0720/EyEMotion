@@ -559,7 +559,7 @@ class Application(tk.Frame):
         self.fit_pb.start(10)
 
     def conversion_r(self):
-        cv = convertor.Convertor(self.video_input_path, self.eeg_input_path)
+        cv = convertor.Convertor(self.video_input_path, self.eeg_input_path, self.attention_output)
         cv.fit_length(self.video_output_path, self.eeg_output_path)
         self.data = cv.fit_sampling_rate(self.eeg_output_path)
         # self.init_graph_utils()
