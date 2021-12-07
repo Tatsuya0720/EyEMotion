@@ -112,6 +112,8 @@ class Convertor:
         down_data[self.columns[0]] = np.linspace(0, down_data.shape[0], down_data.shape[0]).astype(np.int)
 
         if csv_output_path is not None:
+            self.attention_csv = self.attention_csv.reset_index(drop=True)
+            down_data = down_data.reset_index(drop=True)
             down_data = pd.concat([self.attention_csv, down_data], axis=1)
             down_data.to_csv(csv_output_path, index=False)
 
