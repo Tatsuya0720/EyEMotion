@@ -9,15 +9,18 @@ from datetime import datetime, timedelta
 
 
 class Convertor:
-    def __init__(self, mp4_input_path, csv_input_path):
+    def __init__(self, mp4_input_path, csv_input_path, attention_input_path):
         self.mp4_input_path = mp4_input_path
         self.csv_input_path = csv_input_path
+        self.attention_input_path = attention_input_path
 
         self.cap = cv2.VideoCapture(self.mp4_input_path)
         self.eeg = pd.read_csv(self.csv_input_path)
         self.eeg = self.eeg.rename(columns={self.eeg.columns[0]: "title"})
         self.eeg = self.eeg.rename(columns={self.eeg.columns[2]: "sampling"})
         self.columns = self.eeg.columns
+
+        self.attention_csv = pd.read_csv(attention_input_path)
 
         # 動画データのパラメータ
         self.total_video_frame = self.cap.get(cv2.CAP_PROP_FRAME_COUNT)
@@ -51,6 +54,7 @@ class Convertor:
                 # ビデオのカット
                 video = VideoFileClip(self.mp4_input_path).subclip(cap_start_diff)
                 video.write_videofile(mp4_output_path, codec='libx264')
+                self.attention_csv = self.attention_csv.iloc[self.video_fps*cap_start_diff:]
                 # EEGデータのカット
                 self.eeg = self.eeg.iloc[0:int(self.total_eeg_frame - self.eeg_fps * cap_end_diff), :]
             elif self.video_end_time > self.eeg_end_time:  # case2
@@ -58,6 +62,7 @@ class Convertor:
                 video = VideoFileClip(self.mp4_input_path).subclip(cap_start_diff,
                                                                    self.video_play_time - cap_end_diff)
                 video.write_videofile(mp4_output_path, codec='libx264')
+                self.attention_csv = self.attention_csv.iloc[self.video_fps*cap_start_diff:self.video_fps*cap_end_diff]
 
         elif self.video_start_time > self.eeg_start_time:
             if self.video_end_time <= self.eeg_end_time:  # case3
@@ -66,6 +71,7 @@ class Convertor:
             elif self.video_end_time > self.eeg_end_time:  # case4
                 video = VideoFileClip(self.mp4_input_path).subclip(0, self.video_play_time - cap_end_diff)
                 video.write_videofile(mp4_output_path, codec='libx264')
+                self.attention_csv = self.attention_csv.iloc[:self.video_fps*cap_end_diff]
                 self.eeg = self.eeg.iloc[int(cap_start_diff):int(self.total_eeg_frame), :]
 
         if csv_output_path is not None:
@@ -106,6 +112,7 @@ class Convertor:
         down_data[self.columns[0]] = np.linspace(0, down_data.shape[0], down_data.shape[0]).astype(np.int)
 
         if csv_output_path is not None:
+            down_data = pd.concat([self.attention_csv, down_data], axis=1)
             down_data.to_csv(csv_output_path, index=False)
 
         return down_data
