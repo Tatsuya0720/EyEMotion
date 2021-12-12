@@ -14,6 +14,7 @@ from tobii.calibrate import Calibrate
 from tobii.recorder import Recorder
 from tobii.utils import Settings
 from attention import attention_detect
+from capture.capture import Capture
 from tkinter import ttk
 import threading
 
@@ -51,6 +52,7 @@ class Application(tk.Frame):
         self.t_capture = None
 
         # path
+        self.dir_input_path = None
         self.eeg_input_path = None
         self.eeg_output_path = None
         self.video_input_path = None
@@ -166,9 +168,32 @@ class Application(tk.Frame):
         convert_discription = tk.Label(convert_main, text="generate csv from sd card", pady=10)
         convert_discription.pack(side=tk.TOP, anchor=tk.W)
 
+        self.imu = tk.Frame(convert_main, relief=tk.RIDGE, bd=5, pady=10)
+        self.imu.pack(side=tk.TOP, fill=tk.BOTH)
+        self.imu_text = tk.Label(self.imu, text="SDカード内のフォルダを選択してください　例)2021.11.30.13.21.1")
+        self.imu_text.pack(side=tk.TOP, anchor=tk.W)
+        self.i_imu = tk.Frame(self.imu)
+        self.i_imu.pack(side=tk.TOP, fill=tk.BOTH)
+        self.i_imu_box = tk.Entry(self.i_imu, width=80)
+        self.i_imu_box.pack(side=tk.LEFT, fill=tk.BOTH)
+        self.i_imu_load = tk.Button(self.i_imu, bg=self.load_bt_color, command=self.i_folder_dialog, text="input",
+                                    width=10)
+        self.i_imu_load.pack(side=tk.LEFT, fill=tk.BOTH)
+        self.o_imu = tk.Frame(self.imu)
+        self.o_imu.pack(side=tk.TOP, fill=tk.BOTH)
+        self.o_imu_box = tk.Entry(self.o_imu, width=80)
+        self.o_imu_box.pack(side=tk.LEFT, fill=tk.BOTH)
+        self.o_imu_load = tk.Button(self.o_imu, bg=self.load_bt_color, command=self.o_folder_dialog, text="output",
+                                    width=10)
+        self.o_imu_load.pack(side=tk.LEFT, fill=tk.BOTH)
+        self.imu_make = tk.Button(self.o_imu, bg=self.load_bt_color, text="読み込み", width=10, command=self.make_file_util)
+        self.imu_make.pack(side=tk.RIGHT, anchor=tk.W, fill=tk.BOTH)
+        self.imu_status = tk.Label(self.o_imu, text="incomplete", width=10)
+        self.imu_status.pack(side=tk.RIGHT, anchor=tk.W, fill=tk.BOTH)
+
         self.gaze = tk.Frame(convert_main, relief=tk.RIDGE, bd=5, pady=10)
         self.gaze.pack(side=tk.TOP, fill=tk.BOTH)
-        self.gaze_text = tk.Label(self.gaze, text="gaze")
+        self.gaze_text = tk.Label(self.gaze, text="視線データ")
         self.gaze_text.pack(side=tk.TOP, anchor=tk.W)
         self.i_gaze = tk.Frame(self.gaze)
         self.i_gaze.pack(side=tk.TOP, fill=tk.BOTH)
@@ -182,32 +207,10 @@ class Application(tk.Frame):
         self.o_gaze_box.pack(side=tk.LEFT, fill=tk.BOTH)
         self.o_gaze_load = tk.Button(self.o_gaze, bg=self.load_bt_color, command=self.o_gaze_dialog, text="output", width=10)
         self.o_gaze_load.pack(side=tk.LEFT, fill=tk.BOTH)
-        self.gaze_make = tk.Button(self.o_gaze, bg=self.load_bt_color, text="make", width=10, command=self.fetch_gaze)
+        self.gaze_make = tk.Button(self.o_gaze, bg=self.load_bt_color, text="読み込み", width=10, command=self.fetch_gaze)
         self.gaze_make.pack(side=tk.RIGHT, anchor=tk.W, fill=tk.BOTH)
         self.gaze_status = tk.Label(self.o_gaze, text="incomplete", width=10)
         self.gaze_status.pack(side=tk.RIGHT, anchor=tk.W, fill=tk.BOTH)
-
-
-        self.imu = tk.Frame(convert_main, relief=tk.RIDGE, bd=5, pady=10)
-        self.imu.pack(side=tk.TOP, fill=tk.BOTH)
-        self.imu_text = tk.Label(self.imu, text="imu")
-        self.imu_text.pack(side=tk.TOP, anchor=tk.W)
-        self.i_imu = tk.Frame(self.imu)
-        self.i_imu.pack(side=tk.TOP, fill=tk.BOTH)
-        self.i_imu_box = tk.Entry(self.i_imu, width=80)
-        self.i_imu_box.pack(side=tk.LEFT, fill=tk.BOTH)
-        self.i_imu_load = tk.Button(self.i_imu, bg=self.load_bt_color, command=self.i_imu_dialog, text="input", width=10)
-        self.i_imu_load.pack(side=tk.LEFT, fill=tk.BOTH)
-        self.o_imu = tk.Frame(self.imu)
-        self.o_imu.pack(side=tk.TOP, fill=tk.BOTH)
-        self.o_imu_box = tk.Entry(self.o_imu, width=80)
-        self.o_imu_box.pack(side=tk.LEFT, fill=tk.BOTH)
-        self.o_imu_load = tk.Button(self.o_imu, bg=self.load_bt_color, command=self.o_imu_dialog, text="output", width=10)
-        self.o_imu_load.pack(side=tk.LEFT, fill=tk.BOTH)
-        self.imu_make = tk.Button(self.o_imu, bg=self.load_bt_color, text="make", width=10, command=self.fetch_imu)
-        self.imu_make.pack(side=tk.RIGHT, anchor=tk.W, fill=tk.BOTH)
-        self.imu_status = tk.Label(self.o_imu, text="incomplete", width=10)
-        self.imu_status.pack(side=tk.RIGHT, anchor=tk.W, fill=tk.BOTH)
 
         self.attention = tk.Frame(convert_main, relief=tk.RIDGE, bd=5, pady=10)
         self.attention.pack(side=tk.TOP, fill=tk.BOTH)
@@ -220,14 +223,14 @@ class Application(tk.Frame):
         self.o_attention_load = tk.Button(self.o_attention, bg=self.load_bt_color, command=self.o_attention_dialog, text="output",
                                     width=10)
         self.o_attention_load.pack(side=tk.LEFT, fill=tk.BOTH)
-        self.attention_make = tk.Button(self.o_attention, bg=self.load_bt_color, text="make", width=10, command=self.fetch_attention)
+        self.attention_make = tk.Button(self.o_attention, bg=self.load_bt_color, text="実行", width=10, command=self.fetch_attention)
         self.attention_make.pack(side=tk.RIGHT, anchor=tk.W, fill=tk.BOTH)
         self.attention_status = tk.Label(self.o_attention, text="incomplete", width=10)
         self.attention_status.pack(side=tk.RIGHT, anchor=tk.W, fill=tk.BOTH)
 
         self.eeg = tk.Frame(convert_main, relief=tk.RIDGE, bd=5, pady=10)
         self.eeg.pack(side=tk.TOP, fill=tk.BOTH)
-        self.eeg_text = tk.Label(self.eeg, text="eeg")
+        self.eeg_text = tk.Label(self.eeg, text="脳波データ")
         self.eeg_text.pack(side=tk.TOP, anchor=tk.W)
         self.i_eeg = tk.Frame(self.eeg)
         self.i_eeg.pack(side=tk.TOP, fill=tk.BOTH)
@@ -241,14 +244,14 @@ class Application(tk.Frame):
         self.o_eeg_box.pack(side=tk.LEFT, fill=tk.BOTH)
         self.o_eeg_load = tk.Button(self.o_eeg, bg=self.load_bt_color, command=self.o_csv_file_dialog, text="output",width=10)
         self.o_eeg_load.pack(side=tk.LEFT, fill=tk.BOTH)
-        self.eeg_make = tk.Button(self.o_eeg, bg=self.load_bt_color, text="make", width=10, command=self.fetch_imu)
-        self.eeg_make.pack(side=tk.RIGHT, anchor=tk.W, fill=tk.BOTH)
-        self.eeg_status = tk.Label(self.o_eeg, text="incomplete", width=10)
-        self.eeg_status.pack(side=tk.RIGHT, anchor=tk.W, fill=tk.BOTH)
+        # self.eeg_make = tk.Button(self.o_eeg, bg=self.load_bt_color, text="make", width=10, command=self.fetch_imu)
+        # self.eeg_make.pack(side=tk.RIGHT, anchor=tk.W, fill=tk.BOTH)
+        # self.eeg_status = tk.Label(self.o_eeg, text="incomplete", width=10)
+        # self.eeg_status.pack(side=tk.RIGHT, anchor=tk.W, fill=tk.BOTH)
 
         self.mp4 = tk.Frame(convert_main, relief=tk.RIDGE, bd=5, pady=10)
         self.mp4.pack(side=tk.TOP, fill=tk.BOTH)
-        self.mp4_text = tk.Label(self.mp4, text="mp4")
+        self.mp4_text = tk.Label(self.mp4, text="動画")
         self.mp4_text.pack(side=tk.TOP, anchor=tk.W)
         self.i_mp4 = tk.Frame(self.mp4)
         self.i_mp4.pack(side=tk.TOP, fill=tk.BOTH)
@@ -264,10 +267,13 @@ class Application(tk.Frame):
         self.o_mp4_load = tk.Button(self.o_mp4, bg=self.load_bt_color, command=self.o_video_file_dialog, text="output",
                                     width=10)
         self.o_mp4_load.pack(side=tk.LEFT, fill=tk.BOTH)
-        self.mp4_make = tk.Button(self.o_mp4, bg=self.load_bt_color, text="make", width=10, command=self.csv_conversion)
+        self.mp4_make = tk.Button(self.o_mp4, bg=self.load_bt_color, text="同期", width=10, command=self.csv_conversion)
         self.mp4_make.pack(side=tk.RIGHT, anchor=tk.W, fill=tk.BOTH)
         self.mp4_status = tk.Label(self.o_mp4, text="incomplete", width=10)
         self.mp4_status.pack(side=tk.RIGHT, anchor=tk.W, fill=tk.BOTH)
+
+        self.extract_button = tk.Button(convert_main, bg=self.load_bt_color, text='注視の切り取り', command=self.extract_picture)
+        self.extract_button.pack(side=tk.LEFT, anchor=tk.W, fill=tk.BOTH)
 
         # ------------------------------------------------plot_tab------------------------------------------
 
@@ -360,6 +366,7 @@ class Application(tk.Frame):
         self.read_pb = ttk.Progressbar(self.control_frame, mode="indeterminate")
         self.read_pb.pack(fill=tk.BOTH, pady=(0, 30))
 
+        """
         # output_csvブロック
         o_csv_frame = tk.Frame(self.control_frame)
         o_csv_frame.pack(side=tk.TOP, fill=tk.BOTH)
@@ -418,6 +425,7 @@ class Application(tk.Frame):
 
         self.fit_pb = ttk.Progressbar(self.control_frame, mode="indeterminate")
         self.fit_pb.pack(fill=tk.BOTH, pady=(0, 30))
+        """
 
         # video再生ブロック
         play_button = tk.Button(self.control_frame, text="再生", command=self.play_video_f)
@@ -426,6 +434,48 @@ class Application(tk.Frame):
         # video停止用ブロック
         stop_button = tk.Button(self.control_frame, text="停止", command=self.stop_video)
         stop_button.pack(fill=tk.BOTH)
+
+    def i_folder_dialog(self):
+        self.dir_input_path = tk.filedialog.askdirectory()
+        self.i_imu_box.delete(0, tk.END)
+        self.i_imu_box.insert(tk.END, self.dir_input_path)
+        self.o_folder_dialog()
+
+    def o_folder_dialog(self):
+        self.dir_output_path = self.dir_input_path + "/" + str(self.dir_input_path.split('/')[-1]) + "_OUTPUT"
+        try:
+            os.mkdir(self.dir_output_path)
+        except:
+            print("already exist")
+        self.o_imu_box.delete(0, tk.END)
+        self.o_imu_box.insert(tk.END, self.dir_output_path)
+
+    def make_file_util(self):
+        self.gaze_input = self.dir_input_path + '/gazedata.gz'
+        self.gaze_output = self.dir_output_path + '/gazedata_OUTPUT.csv'
+        self.video_input_path = self.dir_input_path + '/scenevideo.mp4'
+        self.video_output_path = self.dir_output_path + '/scenevideo_OUTPUT.mp4'
+
+        self.i_video_text_box.delete(0, tk.END)
+        self.i_video_text_box.insert(tk.END, self.video_input_path)
+        self.i_mp4_box.delete(0, tk.END)
+        self.i_mp4_box.insert(tk.END, self.video_input_path)
+
+        self.o_mp4_box.delete(0, tk.END)
+        self.o_mp4_box.insert(tk.END, self.video_output_path)
+
+        self.i_gaze_box.delete(0, tk.END)
+        self.i_gaze_box.insert(tk.END, self.gaze_input)
+
+        self.o_gaze_box.delete(0, tk.END)
+        self.o_gaze_box.insert(tk.END, self.gaze_output)
+
+        self.attention_output = self.gaze_output
+        self.o_attention_box.delete(0, tk.END)
+        self.o_attention_box.insert(tk.END, self.attention_output)
+
+        self.imu_status['text'] = "complete!"
+        self.imu_status['bg'] = self.success_color
 
     def i_csv_file_dialog(self):
         file_type = [("csv", "*.csv")]
@@ -439,16 +489,18 @@ class Application(tk.Frame):
     def o_csv_file_dialog(self):
         file_type = [("csv_file", "*.csv")]
         if self.eeg_input_path != None:
-            initial_dir = os.path.dirname(os.path.abspath(__file__)).rsplit("/", 1)[0]
-            initialfile = self.eeg_input_path.rsplit(".", 1)[0].split("/")[-1] + "_OUTPUT.csv"
+            #initial_dir = os.path.dirname(os.path.abspath(__file__)).rsplit("/", 1)[0]
+            #initialfile = self.eeg_input_path.rsplit(".", 1)[0].split("/")[-1] + "_OUTPUT.csv"
+            initial_dir = self.dir_output_path
+            initialfile = self.dir_input_path.split('/')[-1] + "_OUTPUT.csv"
             self.eeg_output_path = tk.filedialog.asksaveasfilename(filetypes=file_type, initialdir=initial_dir, initialfile=initialfile)
-            self.o_csv_text_box.delete(0, tk.END)
-            self.o_csv_text_box.insert(tk.END, self.eeg_output_path)
+            self.i_csv_text_box.delete(0, tk.END)
+            self.i_csv_text_box.insert(tk.END, self.eeg_output_path)
             self.o_eeg_box.delete(0, tk.END)
             self.o_eeg_box.insert(tk.END, self.eeg_output_path)
 
     def i_video_file_dialog(self):
-        file_type = [("MOV", "*.MOV"), ("mov", "*.mov"), ("mp4", "*.mp4")]
+        file_type = [("mp4", "*.mp4")]
         initial_dir = os.path.dirname(os.path.abspath(__file__)).rsplit("/", 1)[0]
         self.video_input_path = tk.filedialog.askopenfilename(filetypes=file_type, initialdir=initial_dir)
         self.i_video_text_box.delete(0, tk.END)
@@ -544,35 +596,54 @@ class Application(tk.Frame):
 
     def csv_conversion(self):
         self.data_read_r()
-        thread3 = threading.Thread(target=self.p_f)
+        # thread3 = threading.Thread(target=self.p_f)
         thread4 = threading.Thread(target=self.conversion_r)
-        thread3.start()
+        # thread3.start()
         thread4.start()
 
     def conversion(self):
-        thread3 = threading.Thread(target=self.p_f)
+        # thread3 = threading.Thread(target=self.p_f)
         thread4 = threading.Thread(target=self.conversion_r)
-        thread3.start()
+        # thread3.start()
         thread4.start()
 
     def p_f(self):
         self.fit_pb.start(10)
 
     def conversion_r(self):
+        data = pd.read_csv(self.eeg_input_path)
+        self.__fill_emotion_column('Engagement', data)
+        self.__fill_emotion_column('Excitement', data)
+        self.__fill_emotion_column('Stress', data)
+        self.__fill_emotion_column('Relaxation', data)
+        self.__fill_emotion_column('Interest', data)
+        self.__fill_emotion_column('Focus', data)
+        data.to_csv(self.eeg_input_path)
         cv = convertor.Convertor(self.video_input_path, self.eeg_input_path, self.attention_output)
         cv.fit_length(self.video_output_path, self.eeg_output_path)
+        #self.eeg_input_path = self.eeg_output_path
         self.data = cv.fit_sampling_rate(self.eeg_output_path)
         # self.init_graph_utils()
-        self.fit_pb.stop()
 
         self.draw_plot()
         self.video_plot()
+        self.mp4_status['text'] = "complete!"
+        self.mp4_status['bg'] = self.success_color
+
+        self.eeg_input_path = self.eeg_output_path
+        self.i_eeg_box.delete(0, tk.END)
+        self.i_eeg_box.insert(tk.END, self.eeg_input_path)
+
+        self.video_input_path = self.video_output_path
+        self.i_mp4_box.delete(0, tk.END)
+        self.i_mp4_box.insert(tk.END, self.video_input_path)
+
 
     def init_graph_utils(self):
         # self.eeg_min = self.data.iloc[:, 2].min()
         # self.eeg_max = self.data.iloc[:, 2].max()
-        self.eeg_min = self.data.iloc[5*128:][self.tobii_combobox.get()].min()
-        self.eeg_max = self.data.iloc[5*128:][self.tobii_combobox.get()].max()
+        self.eeg_min = self.data.iloc[5*128:][self.tobii_combobox.get()].min() - 0.5
+        self.eeg_max = self.data.iloc[5*128:][self.tobii_combobox.get()].max() + 0.5
         # tmp = pd.DataFrame(index=range(self.x_range), columns=self.data.columns).fillna(0)
         # self.data = pd.concat([tmp, self.data], axis=0)
         self.data[self.data.columns[0]] = np.linspace(0, self.data.shape[0], self.data.shape[0]).astype(np.int)
@@ -773,9 +844,12 @@ class Application(tk.Frame):
 
     def start_record(self):
         if self.is_calib == 'true':
-            self.recording = True
-            rec = Recorder(self.ipv4_address)
-            rec.start()
+            if self.recording==False:
+                self.recording = True
+                rec = Recorder(self.ipv4_address)
+                rec.set_folder_name()
+                rec.set_gaze_frequency()
+                rec.start()
 
     def stop_record(self):
         self.recording = False
@@ -786,6 +860,27 @@ class Application(tk.Frame):
         if self.is_calib == 'true':
             rec = Recorder(self.ipv4_address)
             rec.snapshot()
+
+    def __fill_emotion_column(self, emotion, eeg_attention_list):
+        if str('PM.' + emotion + '.IsActive') in eeg_attention_list.columns:
+            eeg_attention_list['PM.' + emotion + '.IsActive'] = eeg_attention_list[
+                'PM.' + emotion + '.IsActive'].fillna(method='bfill')
+            eeg_attention_list['PM.' + emotion + '.Scaled'] = eeg_attention_list[
+                'PM.' + emotion + '.Scaled'].fillna(method='bfill')
+            eeg_attention_list['PM.' + emotion + '.Raw'] = eeg_attention_list[
+                'PM.' + emotion + '.Raw'].fillna(method='bfill')
+            eeg_attention_list['PM.' + emotion + '.Min'] = eeg_attention_list[
+                'PM.' + emotion + '.Min'].fillna(method='bfill')
+            eeg_attention_list['PM.' + emotion + '.Max'] = eeg_attention_list[
+                'PM.' + emotion + '.Max'].fillna(method='bfill')
+
+    def extract_picture(self):
+        cap = Capture(attention_column='attention')
+        if self.eeg_input_path is not None:
+            cap.capture_attention_scene(self.video_output_path, self.eeg_output_path, self.dir_output_path, command='all')
+        else:
+            cap.capture_attention_scene(self.video_input_path, self.attention_output, self.dir_output_path, command='gaze_only')
+
 
 if __name__ == "__main__":
     fig = Figure(figsize=(8, 3), dpi=100)

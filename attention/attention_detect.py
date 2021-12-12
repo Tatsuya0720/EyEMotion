@@ -21,10 +21,12 @@ class Attention_Detect:
 
         gaze_judge = gaze_std.apply(self.__detect_attention, axis=1)
 
-        gaze_attention = self.__merge_rec_detecting(gaze_judge)
-        gaze_attention = gaze_attention.rename('attention')
+        gaze_attention = gaze_judge
+        continuous_gaze_attention = gaze_attention.copy()
+        continuous_gaze_attention = self.__merge_rec_detecting(continuous_gaze_attention).rename('attention')
+        gaze_attention = gaze_attention.rename('continuous_attention')
 
-        gaze = pd.concat([gaze_std, gaze_attention], axis=1).drop(columns=['Unnamed: 0'])
+        gaze = pd.concat([gaze_std, gaze_attention, continuous_gaze_attention], axis=1).drop(columns=['Unnamed: 0'])
 
         gaze.to_csv(self.output_path, index=False)
 
