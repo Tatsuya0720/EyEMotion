@@ -23,6 +23,7 @@ class Capture:
         self.interest = 0
         self.focus = 0
         self.gazeonly = 0
+        self.no_emotion = 0
 
         # keyはエクセルの表記に変更しておくべし
         self.emotion_count = {
@@ -33,6 +34,7 @@ class Capture:
             'Interest': self.interest,
             'Focus': self.focus,
             'gazeonly': self.gazeonly,
+            'no_emotion': self.no_emotion,
         }
 
     def capture_attention_scene(self, mp4_input, eeg_attention_input, picture_output, command='all'):
@@ -73,13 +75,18 @@ class Capture:
             'PM.Focus.Scaled'
         ]
         # eeg_list.iloc[target_index][column].max(axis=1) しきい値を設定するなら必要
-        emotion = eeg_list.iloc[target_index][column].astype(np.float).idxmax().split('.')[1]
+        emotion = eeg_list[column].iloc[target_index].astype(np.float)
+        emotion = emotion.idxmax(axis=0)
+        emotion = emotion.split('.')[1]
+
+        if emotion == 'Engagement':
+            emotion = 'no_emotion'
 
         return emotion
 
     def __extract_attention_scene(self, command):
         for frame in tqdm(range(self.mp4_frames)):
-            if self.eeg_attention_list.iloc[frame][self.attention_column] == 1:
+            if self.eeg_attention_list[self.attention_column].iloc[frame] == 1:
                 if command == 'all':
                     emotion = self.get_emotion(self.eeg_attention_list, frame)
                 else:

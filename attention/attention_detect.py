@@ -1,5 +1,6 @@
 import pandas as pd
 import numpy as np
+from tqdm import tqdm
 
 class Attention_Detect:
     def __init__(self, input_path, output_path):
@@ -8,11 +9,12 @@ class Attention_Detect:
         self.lim_x_std = 0.5
         self.lim_y_std = 0.5
 
-    def attention_detect(self, n=40, grid_x=10, grid_y=7):
+    def attention_detect(self, n=20, grid_x=10, grid_y=7):
         gaze = pd.read_csv(self.input_path)
 
         gaze_std = gaze[['gaze2d_x','gaze2d_y']].rolling(n).std()
         gaze_std.columns = ['gaze2d_x_std', 'gaze2d_y_std']
+        # gaze_std = self.__calc_std(gaze, n)
         gaze_std = pd.concat([gaze, gaze_std], axis=1)
 
         # 1マスの半分の長さ(許容できる標準偏差)
@@ -31,6 +33,38 @@ class Attention_Detect:
         gaze.to_csv(self.output_path, index=False)
 
         return gaze
+
+    def __calc_std(self, data, n):
+        coordinate = data.copy()
+        coordinate = coordinate[['gaze2d_x','gaze2d_y']]
+        coordinate['gaze2d_x_std'] = 7777
+        coordinate['gaze2d_y_std'] = 7777
+
+        for i in tqdm(range(coordinate.shape[0]-n)):
+            target_x = coordinate.iloc[i]['gaze2d_x']
+            target_y = coordinate.iloc[i]['gaze2d_y']
+
+            """
+            total_x = (coordinate['gaze2d_x'].iloc[i:i+n] - target_x)**2
+            total_y = (coordinate['gaze2d_y'].iloc[i:i+n] - target_y)**2
+            print(total_x)
+            print('----------------------------------')
+
+            coordinate['gaze2d_x_std'].iloc[i+n] = np.sqrt(total_x.sum()/n)
+            coordinate['gaze2d_y_std'].iloc[i+n] = np.sqrt(total_y.sum()/n)"""
+
+            total_x = abs((coordinate['gaze2d_x'].iloc[i:i + n]) - target_x).max()
+            total_y = abs((coordinate['gaze2d_y'].iloc[i:i + n]) - target_y).max()
+            print(total_x)
+            print('----------------------------------')
+
+            coordinate['gaze2d_x_std'].iloc[i + n] = total_x
+            coordinate['gaze2d_y_std'].iloc[i + n] = total_y
+
+        coordinate = coordinate[['gaze2d_x_std', 'gaze2d_y_std']]
+
+        return coordinate
+
 
     def __detect_attention(self, x):
         if x['gaze2d_x_std'] <= self.lim_x_std:

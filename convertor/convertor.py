@@ -51,15 +51,6 @@ class Convertor:
         ]
         print(e_time)
 
-        # 動画データのパラメータ
-        # self.cap.set(cv2.CAP_PROP_FPS, 50)
-        # print(self.cap.get(cv2.CAP_PROP_FPS))
-        # self.total_video_frame = self.cap.get(cv2.CAP_PROP_FRAME_COUNT)
-        # self.video_fps = int(self.cap.get(cv2.CAP_PROP_FPS))
-        # self.video_play_time = self.total_video_frame / self.video_fps
-        # self.video_start_time = datetime(v_time[0], v_time[1], v_time[2], v_time[3], v_time[4], v_time[5])
-        # self.video_end_time = self.video_start_time + timedelta(seconds=self.video_play_time)
-
         self.total_video_frame = self.video.reader.nframes
         self.video_fps = int(self.video.fps)
         print(self.video_fps)
@@ -77,7 +68,9 @@ class Convertor:
         # お互いのサンプリングレートの最小公倍数
         self.common_multiple = np.lcm(int(self.video_fps), int(self.eeg_fps))#int(self.video_fps * self.eeg_fps / math.gcd(int(self.video_fps), int(self.eeg_fps)))
 
-    def fit_length(self, mp4_output_path, csv_output_path=None):
+    def fit_length(self, data, mp4_output_path):
+
+        self.eeg = data
 
         # 動画データとEEGデータのサンプリング開始,終了時間の差
         cap_start_diff = float(
@@ -119,12 +112,7 @@ class Convertor:
                 self.attention_csv = self.attention_csv.iloc[:-int(self.video_fps*cap_end_diff)]
                 self.eeg = self.eeg.iloc[int(self.eeg_fps*cap_start_diff):, :]
 
-        self.eeg.to_csv(csv_output_path, index=False)
-
-        # 動画データのパラメータの更新
-        # self.cap = cv2.VideoCapture(mp4_output_path)
-        # self.total_video_frame = self.cap.get(cv2.CAP_PROP_FRAME_COUNT)
-        # self.video_play_time = self.total_video_frame / self.video_fps
+        #self.eeg.to_csv(csv_output_path, index=False)
 
         self.total_video_frame = self.video.reader.nframes
         self.video_play_time = self.video.duration
@@ -134,10 +122,12 @@ class Convertor:
         self.eeg_play_time = self.total_eeg_frame / self.eeg_fps
         print('2:'+str(self.eeg.shape[0]))
 
-    def fit_sampling_rate(self, csv_output_path=None):
-        self.eeg = pd.read_csv(csv_output_path)
-        print('eeg.shape' + str(self.eeg.shape[0]))
+        return self.eeg
+
+    def fit_sampling_rate(self, data, csv_output_path=None):
+        self.eeg = data
         up_data = pd.DataFrame()
+
         for i in range(self.eeg.shape[1]):
             up_data[self.columns[i]] = resample(self.eeg.iloc[:,i], int(25*self.eeg.shape[0]))
 
@@ -148,7 +138,6 @@ class Convertor:
             down_data[self.columns[i]] = resample(up_data.iloc[:,i], int(up_data.shape[0] * (50/3200)))
 
         print('down_data.shape'+str(down_data.shape[0]))
-        # down_data[self.columns[0]] = np.linspace(0, down_data.shape[0], down_data.shape[0]).astype(np.int)
 
         if csv_output_path is not None:
             self.attention_csv = self.attention_csv.reset_index(drop=True)

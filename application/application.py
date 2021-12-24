@@ -273,7 +273,7 @@ class Application(tk.Frame):
         self.mp4_status.pack(side=tk.RIGHT, anchor=tk.W, fill=tk.BOTH)
 
         self.extract_button = tk.Button(convert_main, bg=self.load_bt_color, text='注視の切り取り', command=self.extract_picture)
-        self.extract_button.pack(side=tk.LEFT, anchor=tk.W, fill=tk.BOTH)
+        self.extract_button.pack(side=tk.LEFT, fill=tk.BOTH)
 
         # ------------------------------------------------plot_tab------------------------------------------
 
@@ -603,27 +603,43 @@ class Application(tk.Frame):
 
     def conversion(self):
         # thread3 = threading.Thread(target=self.p_f)
-        thread4 = threading.Thread(target=self.conversion_r)
+        #thread4 = threading.Thread(target=self.conversion_r)
         # thread3.start()
-        thread4.start()
+        #thread4.start()
+
+        self.conversion_r()
+
+        self.video_input_path = self.video_output_path
+        self.i_mp4_box.delete(0, tk.END)
+        self.i_mp4_box.insert(tk.END, self.video_input_path)
 
     def p_f(self):
         self.fit_pb.start(10)
 
     def conversion_r(self):
         data = pd.read_csv(self.eeg_input_path)
-        self.__fill_emotion_column('Engagement', data)
-        self.__fill_emotion_column('Excitement', data)
-        self.__fill_emotion_column('Stress', data)
-        self.__fill_emotion_column('Relaxation', data)
-        self.__fill_emotion_column('Interest', data)
-        self.__fill_emotion_column('Focus', data)
-        data.to_csv(self.eeg_input_path)
+        data = self.__fill_emotion_column('Engagement', data, 'bfill')
+        data = self.__fill_emotion_column('Excitement', data, 'bfill')
+        data = self.__fill_emotion_column('Stress', data, 'bfill')
+        data = self.__fill_emotion_column('Relaxation', data, 'bfill')
+        data = self.__fill_emotion_column('Interest', data, 'bfill')
+        data = self.__fill_emotion_column('Focus', data, 'bfill')
+
+        data = self.__fill_emotion_column('Engagement', data, 'ffill')
+        data = self.__fill_emotion_column('Excitement', data, 'ffill')
+        data = self.__fill_emotion_column('Stress', data, 'ffill')
+        data = self.__fill_emotion_column('Relaxation', data, 'ffill')
+        data = self.__fill_emotion_column('Interest', data, 'ffill')
+        data = self.__fill_emotion_column('Focus', data, 'ffill')
+
+        self.data = data.drop(columns=['type'], errors='ignore')
+        self.data.to_csv(self.eeg_input_path, index=False)
         cv = convertor.Convertor(self.video_input_path, self.eeg_input_path, self.attention_output)
-        cv.fit_length(self.video_output_path, self.eeg_output_path)
-        #self.eeg_input_path = self.eeg_output_path
-        self.data = cv.fit_sampling_rate(self.eeg_output_path)
+        self.data = cv.fit_length(self.data, self.video_output_path)
+        print(self.data['PM.Interest.Scaled'])
+        self.data = cv.fit_sampling_rate(self.data, self.eeg_output_path)
         # self.init_graph_utils()
+        print(self.data['PM.Interest.Scaled'])
 
         self.draw_plot()
         self.video_plot()
@@ -632,11 +648,11 @@ class Application(tk.Frame):
 
         self.eeg_input_path = self.eeg_output_path
         self.i_eeg_box.delete(0, tk.END)
-        self.i_eeg_box.insert(tk.END, self.eeg_input_path)
+        self.i_eeg_box.insert(tk.END, self.eeg_output_path)
 
         self.video_input_path = self.video_output_path
         self.i_mp4_box.delete(0, tk.END)
-        self.i_mp4_box.insert(tk.END, self.video_input_path)
+        self.i_mp4_box.insert(tk.END, self.video_output_path)
 
 
     def init_graph_utils(self):
@@ -755,7 +771,7 @@ class Application(tk.Frame):
 
     def fetch_attention(self):
         at = attention_detect.Attention_Detect(self.gaze_output, self.attention_output)
-        self.attention_csv = at.attention_detect(n=40, grid_x=10, grid_y=7)
+        self.attention_csv = at.attention_detect(n=20, grid_x=20, grid_y=10)
         self.attention_status['text'] = "complete!"
         self.attention_status['bg'] = self.success_color
 
@@ -861,18 +877,15 @@ class Application(tk.Frame):
             rec = Recorder(self.ipv4_address)
             rec.snapshot()
 
-    def __fill_emotion_column(self, emotion, eeg_attention_list):
+    def __fill_emotion_column(self, emotion, eeg_attention_list, command):
         if str('PM.' + emotion + '.IsActive') in eeg_attention_list.columns:
-            eeg_attention_list['PM.' + emotion + '.IsActive'] = eeg_attention_list[
-                'PM.' + emotion + '.IsActive'].fillna(method='bfill')
-            eeg_attention_list['PM.' + emotion + '.Scaled'] = eeg_attention_list[
-                'PM.' + emotion + '.Scaled'].fillna(method='bfill')
-            eeg_attention_list['PM.' + emotion + '.Raw'] = eeg_attention_list[
-                'PM.' + emotion + '.Raw'].fillna(method='bfill')
-            eeg_attention_list['PM.' + emotion + '.Min'] = eeg_attention_list[
-                'PM.' + emotion + '.Min'].fillna(method='bfill')
-            eeg_attention_list['PM.' + emotion + '.Max'] = eeg_attention_list[
-                'PM.' + emotion + '.Max'].fillna(method='bfill')
+            eeg_attention_list['PM.' + emotion + '.IsActive'] = eeg_attention_list['PM.' + emotion + '.IsActive'].fillna(method=command)
+            eeg_attention_list['PM.' + emotion + '.Scaled'] = eeg_attention_list['PM.' + emotion + '.Scaled'].fillna(method=command)
+            eeg_attention_list['PM.' + emotion + '.Raw'] = eeg_attention_list['PM.' + emotion + '.Raw'].fillna(method=command)
+            eeg_attention_list['PM.' + emotion + '.Min'] = eeg_attention_list['PM.' + emotion + '.Min'].fillna(method=command)
+            eeg_attention_list['PM.' + emotion + '.Max'] = eeg_attention_list['PM.' + emotion + '.Max'].fillna(method=command)
+
+            return eeg_attention_list
 
     def extract_picture(self):
         cap = Capture(attention_column='attention')
