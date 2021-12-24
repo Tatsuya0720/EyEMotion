@@ -1,5 +1,6 @@
 import requests
 import json
+import datetime
 
 
 class Recorder:
@@ -62,7 +63,7 @@ class Recorder:
         """
         :return: 録画中の動画のuuid
         """
-        return requests.get(self.default+"recorder.duration").json()
+        return requests.get(self.default+"recorder.uuid").json()
 
     def valid_gaze_sample(self):
         """
@@ -76,3 +77,21 @@ class Recorder:
         :return: 録画開始時間を返す
         """
         return requests.get(self.default+"recorder.created").json()
+
+    def set_folder_name(self):
+        time = datetime.datetime.now()
+
+        folder_name = str(
+            str(time.year) + "." +
+            str(time.month) + "." +
+            str(time.day) + "." +
+            str(time.hour) + "." +
+            str(time.minute) + "." +
+            str(time.second)
+        )
+
+        requests.post(url=self.default+"recorder.folder", data="'" + str(folder_name) + "'")
+
+    def set_gaze_frequency(self, frequency=50):
+        requests.post(self.default + "settings.gaze-frequency", data=str(frequency))
+        requests.post(self.default + "settings.gaze-overlay", data="true")
