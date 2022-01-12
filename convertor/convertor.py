@@ -23,6 +23,8 @@ class Convertor:
         print("1:"+str(self.eeg.shape[0]))
 
         self.attention_csv = pd.read_csv(attention_input_path)
+        print('a' + str(self.cap.get(cv2.CAP_PROP_FRAME_COUNT)))
+        print('b' + str(self.attention_csv.shape[0]))
 
         self.video = VideoFileClip(self.mp4_input_path).set_fps(50)
 
@@ -36,6 +38,7 @@ class Convertor:
             int(v_time.split('.')[3]),
             int(v_time.split('.')[4]),
             int(v_time.split('.')[5]),
+            int(v_time.split('.')[6]),
         ]
         print(v_time)
         # 脳波のファイル名
@@ -47,22 +50,24 @@ class Convertor:
             int(e_file.split('.')[2].split('T')[0]),
             int(e_file.split('.')[2].split('T')[1]),
             int(e_file.split('.')[3]),
-            int(e_file.split('.')[4].split('+')[0])
+            int(e_file.split('.')[4]),
+            int(e_file.split('.')[5].split('+')[0])
         ]
         print(e_time)
 
         self.total_video_frame = self.video.reader.nframes
-        self.video_fps = int(self.video.fps)
+        self.video_play_time = self.video.duration
+        self.video_fps = self.attention_csv.shape[0] / (self.video_play_time + 1)
+        print('ancfdjaljf')
         print(self.video_fps)
-        self.video_play_time = self.video.duration#self.total_video_frame / self.video_fps
-        self.video_start_time = datetime(v_time[0], v_time[1], v_time[2], v_time[3], v_time[4], v_time[5])
+        self.video_start_time = datetime(v_time[0], v_time[1], v_time[2], v_time[3], v_time[4], v_time[5], v_time[6])
         self.video_end_time = self.video_start_time + timedelta(seconds=self.video_play_time)
 
         # EEGデータのパラメータ
         self.total_eeg_frame = self.eeg.shape[0]
         self.eeg_fps = 128
         self.eeg_play_time = self.total_eeg_frame / self.eeg_fps
-        self.eeg_start_time = datetime(e_time[0], e_time[1], e_time[2], e_time[3], e_time[4], e_time[5])
+        self.eeg_start_time = datetime(e_time[0], e_time[1], e_time[2], e_time[3], e_time[4], e_time[5], e_time[6])
         self.eeg_end_time = self.eeg_start_time + timedelta(seconds=self.eeg_play_time)
 
         # お互いのサンプリングレートの最小公倍数
@@ -79,8 +84,8 @@ class Convertor:
         cap_end_diff = float(
             (abs(min(self.video_end_time, self.eeg_end_time)-max(self.video_end_time, self.eeg_end_time))).total_seconds())
 
-        print('cap_start'+str(cap_start_diff))
-        print('cap_end'+str(cap_end_diff))
+        print('cap_start_diff'+str(cap_start_diff))
+        print('cap_end_diff'+str(cap_end_diff))
         print('total_range'+str(abs(self.video_play_time-self.eeg_play_time)))
 
         # サンプリング開始,終了時間を合わせる
@@ -114,7 +119,8 @@ class Convertor:
 
         #self.eeg.to_csv(csv_output_path, index=False)
 
-        self.total_video_frame = self.video.reader.nframes
+        tv = cv2.VideoCapture(mp4_output_path)
+        self.total_video_frame = tv.get(cv2.CAP_PROP_FRAME_COUNT)
         self.video_play_time = self.video.duration
 
         # EEGデータのパラメータの更新
@@ -144,5 +150,9 @@ class Convertor:
             down_data = down_data.reset_index(drop=True)
             down_data = pd.concat([self.attention_csv, down_data], axis=1)
             down_data.to_csv(csv_output_path, index=False)
+
+        print("total_video_frame" + str(self.total_video_frame))
+        print("total_attention_frame" + str(self.attention_csv.shape[0]))
+        print("total_eeg_frame" + str(self.total_eeg_frame))
 
         return down_data

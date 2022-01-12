@@ -78,16 +78,15 @@ class Recorder:
         """
         return requests.get(self.default+"recorder.created").json()
 
-    def set_folder_name(self):
-        time = datetime.datetime.now()
-
+    def set_folder_name(self, time):
         folder_name = str(
             str(time.year) + "." +
             str(time.month) + "." +
             str(time.day) + "." +
             str(time.hour) + "." +
             str(time.minute) + "." +
-            str(time.second)
+            str(time.second) + "." +
+            str(time.microsecond)
         )
 
         requests.post(url=self.default+"recorder.folder", data="'" + str(folder_name) + "'")

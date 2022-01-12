@@ -1,5 +1,6 @@
 import cv2
 import os
+import datetime
 import tkinter as tk
 import matplotlib.pyplot as plt
 import datetime
@@ -863,9 +864,10 @@ class Application(tk.Frame):
             if self.recording==False:
                 self.recording = True
                 rec = Recorder(self.ipv4_address)
-                rec.set_folder_name()
-                rec.set_gaze_frequency()
+                rec.set_gaze_frequency(50)
                 rec.start()
+                start_time = datetime.datetime.now()
+                rec.set_folder_name(start_time)
 
     def stop_record(self):
         self.recording = False
